@@ -23,7 +23,7 @@ export const connect = async()=>{
           mongoose.connection.on('reconnected', () =>
             console.log('MongoDB | reconnected to mongodb'),
           );
-          return await mongoose.connect('mongodb://127.0.0.1:27017/OINSA')
+          return await mongoose.connect('mongodb+srv://perezmaasjosue:pocholis@cluster0.z1stn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
       
     } catch (err) {
         console.error('Database connection failed', err)
