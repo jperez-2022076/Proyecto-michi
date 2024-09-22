@@ -15,7 +15,9 @@ config();
 const port = process.env.PORT|| 3200;
 app.use(express.urlencoded({extended: false}))
 app.use(express.json())
-app.use(cors())
+app.use(cors({
+  origin: '*', // o especifica el origen de tu frontend
+}));
 app.use(helmet())
 app.use(morgan('dev'))
 
