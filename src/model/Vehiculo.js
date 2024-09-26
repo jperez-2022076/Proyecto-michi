@@ -16,6 +16,10 @@ const vehiculoSchema = Schema(
             type:Boolean,
             default:false,
         },
+        fecha: {
+            type: Date,
+            required: true
+        },
         estado:{
             type:Boolean,
             default:true
