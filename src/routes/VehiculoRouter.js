@@ -17,7 +17,7 @@ api.get('/lista',[validateJwt,isAdmin] , getVehiculos); // Obtener todos los veh
 api.get('/buscar/:id',[validateJwt,isAdmin] , getVehiculoById); // Obtener un vehículo por ID
 api.put('/actualizar/:id',[validateJwt,isAdmin] , updateVehiculo); // Actualizar un vehículo
 api.delete('/eliminar/:id',[validateJwt,isAdmin] , deleteVehiculo); // Eliminar un vehículo
-api.get('/exportar/excel',[validateJwt,isAdmin] , exportToExcel); // Exportar datos a Excel
-api.get('/exportar/pdf',[validateJwt,isAdmin] , exportToPDF); // Exportar datos a PDF
+api.get('/exportar/excel' , exportToExcel); // Exportar datos a Excel
+api.get('/exportar/pdf' , exportToPDF); // Exportar datos a PDF
 
 export default api;

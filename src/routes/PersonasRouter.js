@@ -10,6 +10,6 @@ api.post('/agregar',[validateJwt,isAdmin] ,createPersona)
 api.get('/lista',[validateJwt,isAdmin] ,listPersonas)
 api.put('/actualizar/:id',[validateJwt,isAdmin] ,updatePersona)
 api.delete('/eliminar/:id',[validateJwt,isAdmin] ,deletePersona)
-api.get('/exportar/excel',[validateJwt,isAdmin] , exportPersonasToExcel);
-api.get('/exportar/pdf',[validateJwt,isAdmin] , exportPersonasToPDF);
+api.get('/exportar/excel', exportPersonasToExcel);
+api.get('/exportar/pdf' , exportPersonasToPDF);
 export default api;
