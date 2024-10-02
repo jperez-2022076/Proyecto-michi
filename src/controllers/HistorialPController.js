@@ -75,7 +75,7 @@ const PAGE_SIZE = 300;
 // Función para exportar historial a Excel con paginación
 export const exportHistorialToExcelPaginated = async (req, res) => {
     try {
-        const { fechaInicio, fechaFinal } = req.body;
+        const { fechaInicio, fechaFinal } = req.params;
 
         const fechaInicioParsed = fechaInicio ? new Date(fechaInicio) : moment().startOf('day').toDate();
         const fechaFinalParsed = fechaFinal ? new Date(fechaFinal) : moment().endOf('day').toDate();
@@ -152,7 +152,7 @@ export const exportHistorialToExcelPaginated = async (req, res) => {
 // Función para exportar historial a PDF con paginación
 export const exportHistorialToPDFPaginated = async (req, res) => {
     try {
-        const { fechaInicio, fechaFinal } = req.body;
+        const { fechaInicio, fechaFinal } = req.params;
 
         // Ajustar el rango de fechas
         const fechaInicioParsed = fechaInicio ? moment(fechaInicio).startOf('day').toDate() : moment().startOf('day').toDate();

@@ -7,7 +7,7 @@ const api = Router();
 
 api.post('/agregar', addHistorialP)
 api.post('/lista', getHistorialPByFecha)
-api.post('/exportar/pdf',exportHistorialToPDFPaginated)
-api.post('/exportar/excel', exportHistorialToExcelPaginated)
+api.get('/exportar/pdf/:fechaInicio/:fechaFinall',exportHistorialToPDFPaginated)
+api.get('/exportar/excel/:fechaInicio/:fechaFinal', exportHistorialToExcelPaginated)
 
 export default  api;
