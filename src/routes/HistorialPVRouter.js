@@ -8,7 +8,7 @@ const app =Router()
 
 app.post('/agregar',addHistorialPV)
 app.post('/listar', getHistorialPVByFecha)
-app.post('/exportar/excel', exportHistorialPVToExcelPaginated)
-app.post('/exportar/pdf',exportHistorialPVToPDFPaginated)
+app.get('/exportar/excel/:fechaInicio/:fechaFinal', exportHistorialPVToExcelPaginated)
+app.get('/exportar/pdf/:fechaInicio/:fechaFinall',exportHistorialPVToPDFPaginated)
 
 export default app
