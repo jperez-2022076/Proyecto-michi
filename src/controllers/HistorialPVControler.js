@@ -3,11 +3,12 @@ import historalPV  from '../model/HistorialPV.js' // Ajusta la ruta si es necesa
 import moment from 'moment';
 import PDFDocument from 'pdfkit';
 import exceljs from 'exceljs';
+import moment from 'moment';
 
 // Crear un nuevo historial de vehículo
 export const addHistorialPV = async (req, res) => {
     try {
-        const { persona, vehiculo, usuario } = req.body;
+        const { persona, vehiculo, usuario, fecha, hora } = req.body; // Asegúrate de incluir fecha y hora
 
         // Buscar el último registro de historial del vehículo
         const ultimoHistorial = await historalPV.findOne({ vehiculo })
@@ -20,9 +21,9 @@ export const addHistorialPV = async (req, res) => {
             nuevoEstado = 'S'; // Cambia a 'S' si la última acción fue 'E'
         }
 
-        // Obtener la fecha y hora actual
-        const fechaActual = moment().startOf('day').toDate(); // Fecha del día actual
-        const horaActual = moment().format('HH:mm:ss'); // Hora actual en formato 24 horas
+        // Si no se proporciona una fecha, usa la fecha actual
+        const fechaActual = fecha ? new Date(fecha) : moment().startOf('day').toDate();
+        const horaActual = hora ? hora : moment().format('HH:mm:ss');
 
         // Crear un nuevo historial con la fecha, hora y estado actual
         const nuevoHistorial = new historalPV({
@@ -30,8 +31,8 @@ export const addHistorialPV = async (req, res) => {
             vehiculo,
             usuario,
             estado: nuevoEstado, // Estado alternado ('E' o 'S')
-            fecha: fechaActual,
-            hora: horaActual
+            fecha: fechaActual, // Usa la fecha proporcionada o la actual
+            hora: horaActual // Usa la hora proporcionada o la actual
         });
 
         // Guardar el nuevo historial
@@ -42,7 +43,6 @@ export const addHistorialPV = async (req, res) => {
         return res.status(500).json({ message: 'Error al crear historial', error: error.message });
     }
 };
-
 // Obtener historial entre fecha de inicio y fecha final
 export const getHistorialPVByFecha = async (req, res) => {
     try {
