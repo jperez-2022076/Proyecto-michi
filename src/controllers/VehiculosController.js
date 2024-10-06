@@ -58,6 +58,32 @@ export const getVehiculoById = async (req, res) => {
     }
   };
   
+  export const searchVehiculosByPlaca = async (req, res) => {
+    try {
+        const { placa } = req.body;
+
+        // Normalizar la placa (eliminar tildes si hubiera y manejar mayúsculas/minúsculas)
+        const normalizedPlaca = placa.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+
+        // Crear expresión regular insensible a mayúsculas/minúsculas
+        const regex = new RegExp(normalizedPlaca, 'i');
+
+        // Obtener todos los vehículos
+        const vehiculos = await Vehiculo.find({});
+
+        // Filtrar los vehículos que coincidan con la placa normalizada
+        const filteredVehiculos = vehiculos.filter(vehiculo =>
+            vehiculo.placa.normalize('NFD').replace(/[\u0300-\u036f]/g, "").match(regex)
+        );
+
+        res.status(200).json(filteredVehiculos);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al buscar vehículos por placa', error: error.message });
+    }
+};
+
+
 
 
 // Exportar a Excel
