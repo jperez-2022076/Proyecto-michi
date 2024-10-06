@@ -3,7 +3,6 @@ import historalPV  from '../model/HistorialPV.js' // Ajusta la ruta si es necesa
 import moment from 'moment';
 import PDFDocument from 'pdfkit';
 import exceljs from 'exceljs';
-import moment from 'moment';
 
 // Crear un nuevo historial de vehículo
 export const addHistorialPV = async (req, res) => {
