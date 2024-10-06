@@ -5,11 +5,10 @@ import exceljs from 'exceljs';
 import moment from 'moment'; // Usaremos moment para facilitar el manejo de fechas
 
 
-
 // Crear un nuevo historial con alternancia de entrada y salida
 export const addHistorialP = async (req, res) => {
     try {
-        const { persona, usuario } = req.body;
+        const { persona, usuario, fecha, hora } = req.body; // Asegúrate de incluir fecha y hora
 
         // Buscar el último registro de historial de la persona
         const ultimoHistorial = await HistorialP.findOne({ persona })
@@ -22,17 +21,13 @@ export const addHistorialP = async (req, res) => {
             nuevoEstado = 'S'; // Cambia a 'S' si la última acción fue 'E'
         }
 
-        // Obtener la fecha y hora actual
-        const fechaActual = moment().startOf('day').toDate(); // Fecha del día actual
-        const horaActual = moment().format('HH:mm:ss'); // Hora actual en formato 24 horas
-
         // Crear un nuevo historial con la fecha, hora y estado actual
         const nuevoHistorial = new HistorialP({
             persona,
             usuario,
             estado: nuevoEstado, // Estado alternado ('E' o 'S')
-            fecha: fechaActual,
-            hora: horaActual
+            fecha, // Usa la fecha proporcionada
+            hora // Usa la hora proporcionada
         });
 
         // Guardar el nuevo historial
