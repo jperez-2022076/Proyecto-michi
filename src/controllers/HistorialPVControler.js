@@ -20,18 +20,14 @@ export const addHistorialPV = async (req, res) => {
             nuevoEstado = 'S'; // Cambia a 'S' si la última acción fue 'E'
         }
 
-        // Si no se proporciona una fecha, usa la fecha actual
-        const fechaActual = fecha ? new Date(fecha) : moment().startOf('day').toDate();
-        const horaActual = hora ? hora : moment().format('HH:mm:ss');
-
         // Crear un nuevo historial con la fecha, hora y estado actual
         const nuevoHistorial = new historalPV({
             persona,
             vehiculo,
             usuario,
             estado: nuevoEstado, // Estado alternado ('E' o 'S')
-            fecha: fechaActual, // Usa la fecha proporcionada o la actual
-            hora: horaActual // Usa la hora proporcionada o la actual
+            fecha, // Usa la fecha proporcionada o la actual
+            hora // Usa la hora proporcionada o la actual
         });
 
         // Guardar el nuevo historial
