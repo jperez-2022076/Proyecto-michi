@@ -25,3 +25,5 @@ api.get('/exportar/excel' , exportToExcel); // Exportar datos a Excel
 api.get('/exportar/pdf' , exportToPDF); // Exportar datos a PDF
 
 export default api;
+  
+
