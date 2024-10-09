@@ -36,6 +36,28 @@ export const getVehiculoById = async (req, res) => {
       return res.status(500).json({ message: 'Error al obtener vehículo' });
     }
   };
+// Buscar un vehículo por su ID
+export const searchVehiculoById = async (req, res) => {
+  try {
+      const { id } = req.params; // Obtener el ID de los parámetros de la URL
+      
+      // Buscar el vehículo por su ID en la base de datos
+      const vehiculo = await Vehiculo.findById(id);
+      
+      // Si no encuentra el vehículo, retornar un error 404
+      if (!vehiculo) {
+          return res.status(404).json({ message: 'Vehículo no encontrado' });
+      }
+
+      // Si se encuentra, retornar el vehículo
+      return res.status(200).json(vehiculo);
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: 'Error al buscar vehículo por ID', error: error.message });
+  }
+};
+
+
   export const updateVehiculo = async (req, res) => {
     try {
       const { id } = req.params;

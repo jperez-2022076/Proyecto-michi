@@ -7,9 +7,11 @@ import {
   deleteVehiculo,
   exportToExcel,
   exportToPDF,
-  searchVehiculosByPlaca
+  searchVehiculosByPlaca,
+  searchVehiculoById
 } from '../controllers/VehiculosController.js';
 import { isAdmin, validateJwt } from '../middlewares/validate-jwt.js';
+
 
 const api = Router();
 
@@ -18,6 +20,7 @@ api.get('/lista',[validateJwt,isAdmin] , getVehiculos); // Obtener todos los veh
 api.put('/actualizar/:id',[validateJwt,isAdmin] , updateVehiculo); // Actualizar un vehículo
 api.delete('/eliminar/:id',[validateJwt,isAdmin] , deleteVehiculo); // Eliminar un vehículo
 api.post('/buscar',searchVehiculosByPlaca)
+api.get('/buscarId/:id',searchVehiculoById)
 api.get('/exportar/excel' , exportToExcel); // Exportar datos a Excel
 api.get('/exportar/pdf' , exportToPDF); // Exportar datos a PDF
 

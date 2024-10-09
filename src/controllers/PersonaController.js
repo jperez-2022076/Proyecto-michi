@@ -68,6 +68,26 @@ export const searchPersonasByName = async (req, res) => {
     }
 };
 
+export const searchPersonaById = async (req, res) => {
+    try {
+        const { id } = req.params; // Obtener el ID de los parámetros de la URL
+
+        // Buscar la persona por su ID
+        const persona = await Persona.findById(id);
+
+        // Si no encuentra la persona, devolver un error 404
+        if (!persona) {
+            return res.status(404).json({ message: 'Persona no encontrada' });
+        }
+
+        // Si encuentra la persona, devolver la información
+        res.status(200).json(persona);
+    } catch (err) {
+        res.status(500).json({ message: 'Error al buscar persona por ID', error: err.message });
+    }
+};
+
+
 export const exportPersonasToExcel = async (req, res) => {
     try {
         const personas = await Persona.find();
