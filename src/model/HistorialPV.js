@@ -7,12 +7,10 @@ const historalPV = new Schema(
     persona: {
       type: Schema.Types.ObjectId,
       ref: 'Persona',
-      required: true
     },
     vehiculo: {
       type: Schema.Types.ObjectId,
       ref: 'Vehiculo',
-      required: true
     },
     usuario: {
       type: Schema.Types.ObjectId,
