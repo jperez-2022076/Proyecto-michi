@@ -7,7 +7,7 @@ import exceljs from 'exceljs';
 // Crear un nuevo historial de vehículo
 export const addHistorialPV = async (req, res) => {
     try {
-        const { persona, vehiculo, usuario, fecha, hora } = req.body; // Asegúrate de incluir fecha y hora
+        const { persona, vehiculo, usuario, fecha, hora,DPI,nombre,placa } = req.body; // Asegúrate de incluir fecha y hora
 
         // Buscar el último registro de historial del vehículo
         const ultimoHistorial = await historalPV.findOne({ vehiculo })
@@ -24,6 +24,9 @@ export const addHistorialPV = async (req, res) => {
         const nuevoHistorial = new historalPV({
             persona,
             vehiculo,
+            nombre,
+            DPI,
+            placa,
             usuario,
             estado: nuevoEstado, // Estado alternado ('E' o 'S')
             fecha, // Usa la fecha proporcionada o la actual
