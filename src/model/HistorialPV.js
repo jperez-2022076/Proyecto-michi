@@ -19,6 +19,18 @@ const historalPV = Schema(
             ref: 'Usuario',
             required: true
         },
+        nombre:{
+            type:String,
+            default:""
+        },
+        DPI:{
+            type:String,
+           default:""
+        },
+        placa: {
+            type: String,
+             default:""
+          },
         estado: {
             type: String,
             enum: ['E', 'S'],
