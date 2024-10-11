@@ -19,15 +19,15 @@ const historalPV = new Schema(
     },
     nombre: {
       type: String,
-      default: null // Por defecto será null en lugar de una cadena vacía
+  
     },
     DPI: {
       type: String,
-      default: null // Por defecto será null
+  
     },
     placa: {
       type: String,
-      default: null // Por defecto será null
+     
     },
     estado: {
       type: String,
