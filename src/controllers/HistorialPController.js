@@ -39,6 +39,27 @@ export const addHistorialP = async (req, res) => {
     }
 };
 
+// Obtener historial por persona
+export const getHistorialByPersona = async (req, res) => {
+    try {
+        const { personaId } = req.params; // Suponiendo que el ID de la persona se pasa como parámetro
+
+        // Buscar historial por persona
+        const historial = await HistorialP.find({ persona: personaId })
+            .populate('persona usuario');
+
+        if (!historial.length) {
+            return res.status(404).json({ message: 'No se encontraron registros para esta persona' });
+        }
+
+        return res.status(200).json(historial);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Error al obtener el historial', error: error.message });
+    }
+};
+
+
 
 // Obtener historial entre fecha de inicio y fecha final
 export const getHistorialPByFecha = async (req, res) => {

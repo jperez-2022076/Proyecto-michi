@@ -41,6 +41,28 @@ export const addHistorialPV = async (req, res) => {
         return res.status(500).json({ message: 'Error al crear historial', error: error.message });
     }
 };
+
+
+// Obtener historial por vehículo
+export const getHistorialPVByVehiculo = async (req, res) => {
+    try {
+        const { vehiculo } = req.params; // Obtener el vehículo de los parámetros de la solicitud
+
+        // Buscar el historial filtrando por el vehículo proporcionado
+        const historial = await historalPV.find({ vehiculo })
+            .populate('persona vehiculo usuario'); // Asegúrate de que los campos estén correctamente poblados
+
+        if (!historial.length) {
+            return res.status(404).json({ message: 'No se encontraron registros para el vehículo especificado' });
+        }
+        
+        return res.status(200).json(historial);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Error al obtener el historial por vehículo', error: error.message });
+    }
+};
+
 // Obtener historial entre fecha de inicio y fecha final
 export const getHistorialPVByFecha = async (req, res) => {
     try {
