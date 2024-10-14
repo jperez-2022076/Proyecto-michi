@@ -16,7 +16,7 @@ const vehiculoSchema = new Schema(
     },
     fecha: {
       type: Date,
-      default: Date.now, // Por defecto la fecha de creación será la actual
+  
     },
     estado: {
       type: Boolean,
