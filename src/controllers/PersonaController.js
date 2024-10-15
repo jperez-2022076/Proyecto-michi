@@ -16,12 +16,13 @@ export const createPersona = async (req, res) => {
 
 export const listPersonas = async (req, res) => {
     try {
-        const personas = await Persona.find();
+        const personas = await Persona.find({ estado: true }); // Solo personas con estado true
         res.status(200).json(personas);
     } catch (err) {
         res.status(500).json({ message: 'Error al listar personas', error: err.message });
     }
 };
+
 
 export const updatePersona = async (req, res) => {
     try {
