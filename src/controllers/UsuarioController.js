@@ -44,7 +44,7 @@ export const updateUser = async (req, res) => {
 // Listar todos los usuarios
 export const listUsers = async (req, res) => {
   try {
-    let users = await Usuario.find();
+    let users = await Usuario.find({ estado: true });
     return res.status(200).send({ users });
   } catch (err) {
     console.error(err);

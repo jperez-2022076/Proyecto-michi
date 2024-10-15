@@ -17,7 +17,7 @@ export const addVehiculo = async (req, res) => {
   
   export const getVehiculos = async (req, res) => {
     try {
-      const vehiculos = await Vehiculo.find();
+      const vehiculos = await Vehiculo.find({ estado: true });
       return res.status(200).json(vehiculos);
     } catch (error) {
       console.error(error);
