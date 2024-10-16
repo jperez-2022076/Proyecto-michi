@@ -56,7 +56,7 @@ export const searchPersonasByName = async (req, res) => {
         const regex = new RegExp(normalizedNombre, 'i');
 
         // Obtener todas las personas
-        const personas = await Persona.find({});
+        const personas = await Persona.find({ estado: true });
 
         // Filtrar personas que coincidan con el nombre normalizado
         const filteredPersonas = personas.filter(persona =>
@@ -74,7 +74,7 @@ export const searchPersonaById = async (req, res) => {
         const { id } = req.params; // Obtener el ID de los parámetros de la URL
 
         // Buscar la persona por su ID
-        const persona = await Persona.findById(id);
+        const persona = await Persona.findById({ _id: id, estado: true });
 
         // Si no encuentra la persona, devolver un error 404
         if (!persona) {

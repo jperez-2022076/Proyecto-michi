@@ -42,7 +42,7 @@ export const searchVehiculoById = async (req, res) => {
       const { id } = req.params; // Obtener el ID de los parámetros de la URL
       
       // Buscar el vehículo por su ID en la base de datos
-      const vehiculo = await Vehiculo.findById(id);
+      const vehiculo = await Vehiculo.findById({ _id: id, estado: true });
       
       // Si no encuentra el vehículo, retornar un error 404
       if (!vehiculo) {
@@ -91,7 +91,7 @@ export const searchVehiculoById = async (req, res) => {
         const regex = new RegExp(normalizedPlaca, 'i');
 
         // Obtener todos los vehículos
-        const vehiculos = await Vehiculo.find({});
+        const vehiculos = await Vehiculo.find({estado: true });
 
         // Filtrar los vehículos que coincidan con la placa normalizada
         const filteredVehiculos = vehiculos.filter(vehiculo =>
