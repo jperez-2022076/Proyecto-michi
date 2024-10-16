@@ -73,12 +73,12 @@ export const searchPersonaById = async (req, res) => {
     try {
         const { id } = req.params; // Obtener el ID de los parámetros de la URL
 
-        // Buscar la persona por su ID
-        const persona = await Persona.findById({ _id: id, estado: true });
+        // Buscar la persona por su ID y estado true
+        const persona = await Persona.findOne({ _id: id, estado: true });
 
         // Si no encuentra la persona, devolver un error 404
         if (!persona) {
-            return res.status(404).json({ message: 'Persona no encontrada' });
+            return res.status(404).json({ message: 'Persona no encontrada o inactiva' });
         }
 
         // Si encuentra la persona, devolver la información
