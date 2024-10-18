@@ -197,3 +197,4 @@ export const exportPersonasToPDF = async (req, res) => {
         return res.status(500).json({ message: 'Error al exportar a PDF', error: err.message });
     }
 };
+ 
