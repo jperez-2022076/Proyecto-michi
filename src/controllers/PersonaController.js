@@ -134,8 +134,9 @@ export const exportPersonasToPDF = async (req, res) => {
 
         // Función para dibujar la imagen de fondo
         const drawBackgroundImage = () => {
-      /*       const imagePath = path.join('src/img', 'fondoPDF.png');
-            doc.image(imagePath, 0, 0, { width: doc.page.width, height: doc.page.height }); */
+            const imagePath = path.resolve('src/img/fondoPDF.png'); // Ruta absoluta
+
+            doc.image(imagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
         };
 
         // Función para dibujar los encabezados de la tabla
