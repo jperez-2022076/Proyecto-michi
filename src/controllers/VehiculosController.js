@@ -3,6 +3,10 @@
 import PDFDocument from 'pdfkit';
 import Vehiculo from "../model/Vehiculo.js";
 import exceljs from 'exceljs';
+import fs from 'fs';
+import path from 'path';
+
+
 export const addVehiculo = async (req, res) => {
     try {
       const vehiculoData = req.body;
@@ -143,33 +147,80 @@ export const exportToExcel = async (req, res) => {
     }
   };
   
-  // Exportar a PDF
   export const exportToPDF = async (req, res) => {
     try {
-      const vehiculos = await Vehiculo.find();
-      const doc = new PDFDocument();
+      const vehiculos = await Vehiculo.find({ estado: true });
+      const doc = new PDFDocument({ size: 'A4' });
   
       // Enviar PDF como descarga
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', 'attachment; filename=vehiculos.pdf');
   
+      // Iniciar el PDF
       doc.pipe(res);
   
-      doc.fontSize(20).text('Listado de Vehículos', { align: 'center' });
+      // Función para dibujar la imagen de fondo
+      const drawBackgroundImage = () => {
+        const imagePath = path.join('src/img', 'fondoPDF.png');
+        doc.image(imagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+      };
   
-      // Crear una tabla de los vehículos
+      // Función para dibujar los encabezados de la tabla
+      const drawTableHeaders = () => {
+        doc.font('Helvetica-Bold').fontSize(16).text('Placa', 50, 150); // Tamaño 16 para encabezados
+        doc.text('Pagado', 200, 150);
+        doc.text('Fecha de pago', 400, 150);
+      };
+  
+      // Función para configurar una nueva página con el fondo y encabezados
+      const setupNewPage = () => {
+        doc.addPage(); // Añadir una nueva página
+        drawBackgroundImage(); // Dibujar la imagen de fondo
+        drawTableHeaders(); // Dibujar los encabezados de la tabla
+        doc.font('Helvetica').fontSize(15); // Restablecer la fuente normal para los datos
+      };
+  
+      // Configurar la primera página
+      drawBackgroundImage(); // Dibujar la imagen de fondo en la primera página
+      doc.fontSize(20).text('Listado de Vehículos', { align: 'center', underline: true });
+      doc.moveDown(2);
+      drawTableHeaders();
+  
+      // Asegurarse de cambiar la fuente a normal después de los encabezados en la primera página
+      doc.font('Helvetica').fontSize(15);
+  
+      // Espaciado después del encabezado de la tabla
+      const tableTop = 150;
+      const itemMargin = 20;
+      const maxRowsPerPage = 25;  // Máximo de registros por página
+      let rowsCount = 0;  // Contador de filas para manejar el salto de página
+      let positionY = tableTop + itemMargin;
+  
+      // Crear fila para cada vehículo
       vehiculos.forEach((vehiculo, index) => {
-        doc.fontSize(12).text(`\nVehículo #${index + 1}`);
-        doc.text(`ID: ${vehiculo._id}`);
-        doc.text(`Placa: ${vehiculo.placa}`);
-        doc.text(`Foto: ${vehiculo.fotoV}`);
-        doc.text(`Pagado: ${vehiculo.pagado}`);
-        doc.text(`Estado: ${vehiculo.estado ? 'Activo' : 'Inactivo'}`);
+        const formattedDate = vehiculo.fecha ? vehiculo.fecha.toLocaleDateString() : 'N/A';
+  
+        // Dibujar datos de la tabla
+        doc.text(vehiculo.placa, 50, positionY);
+        doc.text(vehiculo.pagado ? 'Sí' : 'No', 200, positionY);
+        doc.text(formattedDate, 400, positionY);
+  
+        positionY += itemMargin;
+        rowsCount++;
+  
+        // Si alcanzamos el máximo de filas, agregar una nueva página
+        if (rowsCount >= maxRowsPerPage) {
+          setupNewPage(); // Configurar la nueva página
+          positionY = tableTop + itemMargin;  // Reiniciar la posición en la nueva página
+          rowsCount = 0;  // Reiniciar el contador de filas
+        }
       });
   
+      // Finalizar el documento
       doc.end();
     } catch (error) {
       console.error(error);
       return res.status(500).json({ message: 'Error al exportar a PDF' });
     }
   };
+  

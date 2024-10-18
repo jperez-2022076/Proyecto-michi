@@ -3,7 +3,7 @@ import HistorialP from '../model/HistorialP.js';
 import PDFDocument from 'pdfkit';
 import exceljs from 'exceljs';
 import moment from 'moment'; // Usaremos moment para facilitar el manejo de fechas
-
+import path from 'path';
 
 // Crear un nuevo historial con alternancia de entrada y salida
 export const addHistorialP = async (req, res) => {
@@ -162,82 +162,100 @@ export const exportHistorialToExcelPaginated = async (req, res) => {
         return res.status(500).json({ message: 'Error al exportar a Excel', error: error.message });
     }
 };
-// Número de registros por página
 
-
-// Función para exportar historial a PDF con paginación
 export const exportHistorialToPDFPaginated = async (req, res) => {
     try {
         const { fechaInicio, fechaFinal } = req.params;
 
         // Ajustar el rango de fechas
-        const fechaInicioParsed = fechaInicio ? moment(fechaInicio).startOf('day').toDate() : moment().startOf('day').toDate();
-        const fechaFinalParsed = fechaFinal ? moment(fechaFinal).endOf('day').toDate() : moment().endOf('day').toDate();
+        const fechaInicioParsed = fechaInicio ? moment(fechaInicio, 'YYYY-MM-DD').startOf('day').toDate() : moment().startOf('day').toDate();
+        const fechaFinalParsed = fechaFinal ? moment(fechaFinal, 'YYYY-MM-DD').endOf('day').toDate() : moment().endOf('day').toDate();
+
+        // Obtener registros del historial
+        const historial = await HistorialP.find({
+            fecha: {
+                $gte: fechaInicioParsed,
+                $lte: fechaFinalParsed
+            }
+        }).populate('persona usuario'); // Asegurar que se obtienen los datos relacionados
 
         // Crear un documento PDF
-        const doc = new PDFDocument({ margin: 30, size: 'A4' });
+        const doc = new PDFDocument({ size: 'A4' });
 
         // Enviar PDF como descarga
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', 'attachment; filename=historial_paginated.pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=historial.pdf');
 
-        // Conectar el documento a la respuesta
+        // Iniciar el PDF
         doc.pipe(res);
 
-        // Definir un estilo inicial para el documento
-        doc.fontSize(20).text('Historial de Personas', { align: 'center' }).moveDown(1);
+        // Función para dibujar la imagen de fondo
+        const drawBackgroundImage = () => {
+            const imagePath = path.join('src/img', 'fondoPDF.png');
+            doc.image(imagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+        };
 
-        // Variables de control de paginación
-        let currentPage = 0;
-        let hasMoreRecords = true;
-        let recordIndex = 1;
+        const drawTableHeaders = () => {
+            const columnWidths = [100, 80, 90, 90, 120]; // Anchos de columna ajustados
+            doc.font('Helvetica-Bold').fontSize(14);
+            doc.text('Nombre', 40, 150, { width: columnWidths[0] });
+            doc.text('DPI', 140, 150, { width: columnWidths[1] }); // Mantiene la alineación
+            doc.text('Usuario', 240, 150, { width: columnWidths[2] }); // Mantiene la alineación
+            doc.text('Movimiento', 340, 150, { width: columnWidths[3] }); // Mantiene la alineación
+            doc.text('Fecha y Hora', 430, 150, { width: columnWidths[4] }); // Cambia a 400 para que esté alineado
+        };
 
-        // Mientras haya registros
-        while (hasMoreRecords) {
-            const skip = currentPage * PAGE_SIZE;
+        // Función para configurar una nueva página con el fondo y encabezados
+        const setupNewPage = () => {
+            doc.addPage(); // Añadir una nueva página
+            drawBackgroundImage(); // Dibujar la imagen de fondo
+            drawTableHeaders(); // Dibujar los encabezados de la tabla
+            doc.font('Helvetica').fontSize(12); // Restablecer la fuente normal para los datos
+        };
 
-            // Obtener registros paginados
-            const historial = await HistorialP.find({
-                fecha: {
-                    $gte: fechaInicioParsed,
-                    $lte: fechaFinalParsed
-                }
-            })
-            .populate('persona usuario')
-            .limit(PAGE_SIZE)
-            .skip(skip);
+        // Configurar la primera página
+        drawBackgroundImage(); // Dibujar la imagen de fondo en la primera página
+        doc.fontSize(20).text('Historial de Personas', { align: 'center', underline: true });
+        doc.moveDown(2);
+        drawTableHeaders();
 
-            if (!historial.length) {
-                hasMoreRecords = false;
-                break;
+        // Asegurarse de cambiar la fuente a normal después de los encabezados en la primera página
+        doc.font('Helvetica').fontSize(12);
+
+        // Espaciado después del encabezado de la tabla
+        const tableTop = 150;
+        const itemMargin = 20; // Espacio entre filas
+        const maxRowsPerPage = 20; // Ajustamos a más registros por página
+        let rowsCount = 0; // Contador de filas para manejar el salto de página
+        let positionY = tableTop + itemMargin;
+
+        historial.forEach((item) => {
+            const nombreHeight = doc.heightOfString(item.persona.nombre, { width: 100 });
+            const rowHeight = Math.max(nombreHeight, itemMargin);
+        
+            // Dibujar los datos de la tabla con nuevos anchos de columna
+            const columnWidths = [100, 90, 90, 60, 120]; // Anchos de columna ajustados
+            doc.text(item.persona.nombre, 40, positionY, { width: columnWidths[0] });
+            doc.text(item.persona.DPI || 'N/A', 140, positionY, { width: columnWidths[1] }); // Mantiene la alineación
+            doc.text(item.usuario.nombre, 240, positionY, { width: columnWidths[2] }); // Mantiene la alineación
+            doc.text(item.estado === 'E' ? 'Entrada' : 'Salida', 340, positionY, { width: columnWidths[3] }); // Mantiene la alineación
+            doc.text(moment(item.fecha).format('YYYY-MM-DD') + ' ' + item.hora, 430, positionY, { width: columnWidths[4] }); // Cambia a 400 para que esté alineado
+        
+            positionY += rowHeight;
+            rowsCount++;
+        
+            // Si alcanzamos el máximo de filas, agregar una nueva página
+            if (rowsCount >= maxRowsPerPage) {
+                setupNewPage();
+                positionY = tableTop + itemMargin;
+                rowsCount = 0;
             }
-
-            // Añadir los registros al PDF
-            historial.forEach((item, index) => {
-                doc.fontSize(12).text(`\nHistorial #${recordIndex}`);
-                doc.text(`ID: ${item._id}`);
-                doc.text(`Persona: ${item.persona.nombre}`);
-                doc.text(`Usuario: ${item.usuario.nombre}`);
-                doc.text(`Estado: ${item.estado}`);
-                doc.text(`Fecha: ${moment(item.fecha).format('YYYY-MM-DD')}`);
-                doc.text(`Hora: ${item.hora}`);
-                recordIndex++;
-
-                // Verificar si estamos al final de la página
-                if ((index + 1) % PAGE_SIZE === 0) {
-                    doc.addPage(); // Añadir una nueva página
-                    doc.fontSize(20).text('Historial de Personas', { align: 'center' }).moveDown(1);
-                }
-            });
-
-            // Pasar a la siguiente página de datos
-            currentPage++;
-        }
-
-        // Terminar el documento PDF
+        });
+        
+        // Finalizar el documento
         doc.end();
-    } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: 'Error al exportar a PDF', error: error.message });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error al exportar a PDF', error: err.message });
     }
 };
