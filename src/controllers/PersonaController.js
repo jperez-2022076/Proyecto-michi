@@ -118,83 +118,82 @@ export const exportPersonasToExcel = async (req, res) => {
     }
 };
 
-
 export const exportPersonasToPDF = async (req, res) => {
     try {
-      const personas = await Persona.find({ estado: true });
-      const doc = new PDFDocument({ size: 'A4' });
-  
-      // Enviar PDF como descarga
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=personas.pdf');
-  
-      // Iniciar el PDF
-      doc.pipe(res);
-  
-      // Función para dibujar la imagen de fondo
-      const drawBackgroundImage = () => {
-        const imagePath = path.join('src/img', 'fondoPDF.png');
-        doc.image(imagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
-      };
-  
-      // Función para dibujar los encabezados de la tabla
-      const drawTableHeaders = () => {
-        doc.font('Helvetica-Bold').fontSize(16).text('Nombre', 50, 150); // Tamaño 16 para encabezados
-        doc.text('Teléfono', 200, 150);
-        doc.text('DPI', 400, 150);
-      };
-  
-      // Función para configurar una nueva página con el fondo y encabezados
-      const setupNewPage = () => {
-        doc.addPage(); // Añadir una nueva página
-        drawBackgroundImage(); // Dibujar la imagen de fondo
-        drawTableHeaders(); // Dibujar los encabezados de la tabla
-        doc.font('Helvetica').fontSize(15); // Restablecer la fuente normal para los datos
-      };
-  
-      // Configurar la primera página
-      drawBackgroundImage(); // Dibujar la imagen de fondo en la primera página
-      doc.fontSize(20).text('Listado de Personas', { align: 'center', underline: true });
-      doc.moveDown(2);
-      drawTableHeaders();
-  
-      // Asegurarse de cambiar la fuente a normal después de los encabezados en la primera página
-      doc.font('Helvetica').fontSize(15);
-  
-      // Espaciado después del encabezado de la tabla
-      const tableTop = 150;
-      const itemMargin = 20;
-      const maxRowsPerPage = 25;  // Máximo de registros por página
-      let rowsCount = 0;  // Contador de filas para manejar el salto de página
-      let positionY = tableTop + itemMargin;
-  
-      // Crear fila para cada persona
-      personas.forEach((persona, index) => {
-        // Calcular la altura dinámica de cada celda en la fila para nombres largos
-        const nombreHeight = doc.heightOfString(persona.nombre, { width: 120 });
-        const rowHeight = Math.max(nombreHeight, itemMargin); // Asegurarse de que cada fila tenga al menos la altura mínima del margen
-  
-        // Dibujar los datos de la tabla
-        doc.text(persona.nombre, 50, positionY, { width: 120 });
-        doc.text(persona.telefono || 'N/A', 200, positionY);
-        doc.text(persona.DPI || 'N/A', 400, positionY);
-  
-        positionY += rowHeight;  // Ajustar la posición Y según la altura calculada
-        rowsCount++;
-  
-        // Si alcanzamos el máximo de filas, agregar una nueva página
-        if (rowsCount >= maxRowsPerPage) {
-          setupNewPage(); // Configurar la nueva página
-          positionY = tableTop + itemMargin;  // Reiniciar la posición en la nueva página
-          rowsCount = 0;  // Reiniciar el contador de filas
-        }
-      });
-  
-      // Finalizar el documento
-      doc.end();
+        const personas = await Persona.find({ estado: true });
+        const doc = new PDFDocument({ size: 'A4' });
+
+        // Enviar PDF como descarga
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'attachment; filename=personas.pdf');
+
+        // Iniciar el PDF
+        doc.pipe(res);
+
+        // Función para dibujar la imagen de fondo
+        const drawBackgroundImage = () => {
+            const imagePath = path.join('src/img', 'fondoPDF.png');
+            doc.image(imagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+        };
+
+        // Función para dibujar los encabezados de la tabla
+        const drawTableHeaders = () => {
+            doc.font('Helvetica-Bold').fontSize(16).text('Nombre', 50, 150);
+            doc.text('Teléfono', 200, 150);
+            doc.text('DPI', 400, 150);
+        };
+
+        // Función para configurar una nueva página con el fondo y encabezados
+        const setupNewPage = () => {
+            doc.addPage();
+            drawBackgroundImage();
+            drawTableHeaders();
+            doc.font('Helvetica').fontSize(15);
+        };
+
+        // Configurar la primera página
+        drawBackgroundImage();
+        doc.fontSize(20).text('Listado de Personas', { align: 'center', underline: true });
+        doc.moveDown(2);
+        drawTableHeaders();
+
+        // Asegurarse de cambiar la fuente a normal después de los encabezados
+        doc.font('Helvetica').fontSize(15);
+
+        // Espaciado después del encabezado de la tabla
+        const tableTop = 150;
+        const itemMargin = 20;
+        const maxRowsPerPage = 25;
+        let rowsCount = 0;
+        let positionY = tableTop + itemMargin;
+
+        // Crear fila para cada persona
+        personas.forEach((persona) => {
+            const nombreHeight = doc.heightOfString(persona.nombre, { width: 120 });
+            const rowHeight = Math.max(nombreHeight, itemMargin);
+
+            // Dibujar los datos de la tabla
+            doc.text(persona.nombre, 50, positionY, { width: 120 });
+            doc.text(persona.telefono || 'N/A', 200, positionY);
+            doc.text(persona.DPI || 'N/A', 400, positionY);
+
+            positionY += rowHeight;
+            rowsCount++;
+
+            // Si alcanzamos el máximo de filas, agregar una nueva página
+            if (rowsCount >= maxRowsPerPage) {
+                setupNewPage();
+                positionY = tableTop + itemMargin;
+                rowsCount = 0;
+            }
+        });
+
+        // Finalizar el documento
+        doc.end();
     } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: 'Error al exportar a PDF', error: err.message });
+        console.error(err);
+        // Cierra el documento en caso de error para evitar intentar escribir en la respuesta
+        doc.end();  // Esto asegurará que el flujo se cierre en caso de error
+        return res.status(500).json({ message: 'Error al exportar a PDF', error: err.message });
     }
-  };
-  
+};
