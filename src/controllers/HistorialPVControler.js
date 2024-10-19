@@ -149,7 +149,7 @@ export const exportHistorialPVToExcelPaginated = async (req, res) => {
             // Agregar cada registro al Excel
             historial.forEach(item => {
                 worksheet.addRow({
-                    persona: item.persona ? item.persona.nombre : item.nombre, 
+                    persona: item.persona ? item.persona.nombre : "Invitado: "+item.nombre, 
                     DPI: item.persona ? item.persona.DPI :  item.DPI,  // Validar si hay persona
                     vehiculo: item.vehiculo ? item.vehiculo.placa : item.placa, // Validar si hay vehículo
                     usuario: item.usuario ? item.usuario.nombre : 'Desconocido',  // Validar si hay usuario
@@ -279,7 +279,7 @@ export const exportHistorialPVToPDFPaginated = async (req, res) => {
 
             paginatedHistorial.forEach((item) => {
                 const columnWidths = [90, 100, 100, 90, 120]; // Anchos ajustados de las columnas
-                const nombre = item.persona?.nombre || item.nombre;
+                const nombre = item.persona?.nombre ||"Invitado: "+ item.nombre;
                 const dpi = item.persona?.DPI || item.DPI;
                 const vehiculo = item.vehiculo?.placa || item.placa;
                 const guardian = item.usuario?.nombre || 'N/A';
