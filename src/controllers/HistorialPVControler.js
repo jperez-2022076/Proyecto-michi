@@ -93,13 +93,14 @@ export const getHistorialPVByFecha = async (req, res) => {
 
 const PAGE_SIZE = 300;
 
-// Función para exportar historial a Excel con paginación
+
 export const exportHistorialPVToExcelPaginated = async (req, res) => {
     try {
         const { fechaInicio, fechaFinal } = req.params;
 
-        const fechaInicioParsed = fechaInicio ? moment(fechaInicio).startOf('day').toDate() : moment().startOf('day').toDate();
-        const fechaFinalParsed = fechaFinal ? moment(fechaFinal).endOf('day').toDate() : moment().endOf('day').toDate();
+        // Parsear las fechas
+        const fechaInicioParsed = fechaInicio ? moment(fechaInicio, 'YYYY-MM-DD').startOf('day').toDate() : moment().startOf('day').toDate();
+        const fechaFinalParsed = fechaFinal ? moment(fechaFinal, 'YYYY-MM-DD').endOf('day').toDate() : moment().endOf('day').toDate();
 
         // Crear un archivo Excel vacío
         const workbook = new exceljs.Workbook();
@@ -107,16 +108,21 @@ export const exportHistorialPVToExcelPaginated = async (req, res) => {
 
         // Definir columnas
         worksheet.columns = [
-            { header: 'ID', key: '_id', width: 25 },
             { header: 'Persona', key: 'persona', width: 25 },
-            { header: 'Vehículo', key: 'vehiculo', width: 25 },
-            { header: 'Usuario', key: 'usuario', width: 25 },
+            { header: 'DPI', key: 'DPI', width: 25 },
+            { header: 'Placa', key: 'vehiculo', width: 25 },
+            { header: 'Guardian', key: 'usuario', width: 25 },
             { header: 'Estado', key: 'estado', width: 10 },
             { header: 'Fecha', key: 'fecha', width: 20 },
             { header: 'Hora', key: 'hora', width: 10 }
         ];
 
-        // Variable para controlar el paginado
+        // Establecer estilo en los encabezados (negrita y centrado)
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+        // Variable para controlar la paginación
         let currentPage = 0;
         let hasMoreRecords = true;
 
@@ -143,24 +149,35 @@ export const exportHistorialPVToExcelPaginated = async (req, res) => {
             // Agregar cada registro al Excel
             historial.forEach(item => {
                 worksheet.addRow({
-                    _id: item._id,
-                    persona: item.persona.nombre,
-                    vehiculo: item.vehiculo.modelo,
-                    usuario: item.usuario.nombre,
-                    estado: item.estado,
-                    fecha: moment(item.fecha).format('YYYY-MM-DD'),
-                    hora: item.hora
+                    persona: item.persona ? item.persona.nombre : 'Desconocido', 
+                    DPI: item.persona ? item.persona.DPI : 'Desconocido',  // Validar si hay persona
+                    vehiculo: item.vehiculo ? item.vehiculo.modelo : 'Desconocido', // Validar si hay vehículo
+                    usuario: item.usuario ? item.usuario.nombre : 'Desconocido',  // Validar si hay usuario
+                    estado: item.estado === 'S' ? 'Salió' : item.estado === 'E' ? 'Entró' : 'Desconocido', // Validar estado
+                    fecha: item.fecha ? moment(item.fecha).format('YYYY-MM-DD') : '', // Validar fecha
+                    hora: item.hora || '' // Validar hora
                 });
             });
-
-            // Pasar a la siguiente página
             currentPage++;
         }
 
-        // Enviar archivo Excel
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=historial_paginated.xlsx');
+        // Ajustar automáticamente el ancho de las columnas
+        worksheet.columns.forEach((column) => {
+            let maxLength = column.header.length; // Iniciar con la longitud del encabezado
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const cellLength = cell.value ? cell.value.toString().length : 10;
+                if (cellLength > maxLength) {
+                    maxLength = cellLength;
+                }
+            });
+            column.width = maxLength < 10 ? 10 : maxLength; // Asignar un mínimo de 10 si el contenido es pequeño
+        });
 
+        // Configurar las cabeceras para la descarga del archivo
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename=historial_vehiculo.xlsx');
+
+        // Escribir el archivo y finalizar la respuesta
         return workbook.xlsx.write(res).then(() => {
             res.status(200).end();
         });
@@ -169,7 +186,6 @@ export const exportHistorialPVToExcelPaginated = async (req, res) => {
         return res.status(500).json({ message: 'Error al exportar a Excel', error: error.message });
     }
 };
-
 export const exportHistorialPVToPDFPaginated = async (req, res) => {
     try {
         const { fechaInicio, fechaFinal } = req.params;
