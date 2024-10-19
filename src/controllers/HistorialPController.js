@@ -106,10 +106,11 @@ export const exportHistorialToExcelPaginated = async (req, res) => {
 
         // Definir columnas y encabezados
         worksheet.columns = [
-            { header: 'ID', key: '_id', width: 25 },
+
             { header: 'Persona', key: 'persona', width: 25 },
-            { header: 'Usuario', key: 'usuario', width: 25 },
-            { header: 'Estado', key: 'estado', width: 10 },
+            { header: 'DPI', key: 'DPI', width: 25 },
+            { header: 'Guardian', key: 'usuario', width: 25 },
+            { header: 'Movimiento', key: 'estado', width: 10 },
             { header: 'Fecha', key: 'fecha', width: 20 },
             { header: 'Hora', key: 'hora', width: 10 }
         ];
@@ -147,10 +148,10 @@ export const exportHistorialToExcelPaginated = async (req, res) => {
             // Agregar cada registro al Excel
             historial.forEach(item => {
                 worksheet.addRow({
-                    _id: item._id,
-                    persona: item.persona ? item.persona.nombre : 'Desconocido', // Validar si hay nombre de persona
+                    persona: item.persona ? item.persona.nombre : 'Desconocido', 
+                    DPI: item.persona ? item.persona.DPI : 'Desconocido', /// Validar si hay nombre de persona
                     usuario: item.usuario ? item.usuario.nombre : 'Desconocido', // Validar si hay nombre de usuario
-                    estado: item.estado || 'Desconocido', // Validar si hay estado
+                    estado: item.estado === 'S' ? 'Salió' : item.estado === 'E' ? 'Entró' : 'Desconocido', // Validar si hay estado
                     fecha: item.fecha ? moment(item.fecha).format('YYYY-MM-DD') : '', // Validar si hay fecha
                     hora: item.hora || '' // Validar si hay hora
                 });
@@ -174,7 +175,7 @@ export const exportHistorialToExcelPaginated = async (req, res) => {
 
         // Configurar las cabeceras para la descarga del archivo
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=historial_paginated.xlsx');
+        res.setHeader('Content-Disposition', 'attachment; filename=historial_persona.xlsx');
 
         // Escribir el archivo y finalizar la respuesta
         return workbook.xlsx.write(res).then(() => {
