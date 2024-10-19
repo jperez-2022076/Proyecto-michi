@@ -3,6 +3,7 @@ import historalPV  from '../model/HistorialPV.js' // Ajusta la ruta si es necesa
 import moment from 'moment';
 import PDFDocument from 'pdfkit';
 import exceljs from 'exceljs';
+import path from 'path';
 
 // Crear un nuevo historial de vehículo
 export const addHistorialPV = async (req, res) => {
@@ -169,41 +170,83 @@ export const exportHistorialPVToExcelPaginated = async (req, res) => {
     }
 };
 
-
-
-// Función para exportar historial a PDF con paginación
 export const exportHistorialPVToPDFPaginated = async (req, res) => {
     try {
         const { fechaInicio, fechaFinal } = req.params;
 
         // Ajustar el rango de fechas
-        const fechaInicioParsed = fechaInicio ? moment(fechaInicio).startOf('day').toDate() : moment().startOf('day').toDate();
-        const fechaFinalParsed = fechaFinal ? moment(fechaFinal).endOf('day').toDate() : moment().endOf('day').toDate();
+        const fechaInicioParsed = fechaInicio ? moment(fechaInicio, 'YYYY-MM-DD').startOf('day').toDate() : moment().startOf('day').toDate();
+        const fechaFinalParsed = fechaFinal ? moment(fechaFinal, 'YYYY-MM-DD').endOf('day').toDate() : moment().endOf('day').toDate();
+
+        // Obtener registros del historial
+        const historial = await historalPV.find({
+            fecha: {
+                $gte: fechaInicioParsed,
+                $lte: fechaFinalParsed
+            }
+        }).populate('persona vehiculo usuario');
 
         // Crear un documento PDF
-        const doc = new PDFDocument({ margin: 30, size: 'A4' });
+        const doc = new PDFDocument({ size: 'A4' });
 
         // Enviar PDF como descarga
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename=historial_paginated.pdf');
 
-        // Conectar el documento a la respuesta
+        // Iniciar el PDF
         doc.pipe(res);
 
-        // Definir un estilo inicial para el documento
-        doc.fontSize(20).text('Historial de Vehículos', { align: 'center' }).moveDown(1);
+        // Función para dibujar la imagen de fondo
+        const drawBackgroundImage = () => {
+            const imagePath = path.resolve('src/img/fondoPDF.png'); // Ruta absoluta de la imagen de fondo
+            doc.image(imagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+        };
 
-        // Variables de control de paginación
+        // Función para dibujar los encabezados de la tabla
+        const drawTableHeaders = () => {
+            const columnWidths = [90, 90, 100, 80, 120]; // Anchos ajustados de las columnas
+            doc.font('Helvetica-Bold').fontSize(14);
+            doc.text('Nombre', 40, 150, { width: columnWidths[0], ellipsis: true });
+            doc.text('DPI', 140, 150, { width: columnWidths[1], ellipsis: true });
+            doc.text('Vehículo', 240, 150, { width: columnWidths[2], ellipsis: true });
+            doc.text('Guardian', 340, 150, { width: columnWidths[3], ellipsis: true });
+            doc.text('Fecha y Hora', 430, 150, { width: columnWidths[4], ellipsis: true });
+        };
+
+        // Función para configurar una nueva página con el fondo y encabezados
+        const setupNewPage = () => {
+            doc.addPage();
+            drawBackgroundImage(); // Dibujar la imagen de fondo
+            drawTableHeaders(); // Dibujar los encabezados de la tabla
+            doc.font('Helvetica').fontSize(12); // Restablecer la fuente normal para los datos
+        };
+
+        // Configurar la primera página
+        drawBackgroundImage(); // Dibujar la imagen de fondo en la primera página
+        doc.fontSize(20).text('Historial de Vehículos', { align: 'center', underline: true });
+        doc.moveDown(2);
+        drawTableHeaders();
+
+        // Asegurarse de cambiar la fuente a normal después de los encabezados en la primera página
+        doc.font('Helvetica').fontSize(12);
+
+        // Espaciado después del encabezado de la tabla
+        const tableTop = 150;
+        const itemMargin = 20; // Espacio entre filas
+        const maxRowsPerPage = 20; // Registros por página
+        let rowsCount = 0; // Contador de filas para manejar el salto de página
+        let positionY = tableTop + itemMargin;
+
+        // Variables de paginación
         let currentPage = 0;
         let hasMoreRecords = true;
-        let recordIndex = 1;
+        const PAGE_SIZE = 20;
 
-        // Mientras haya registros
         while (hasMoreRecords) {
             const skip = currentPage * PAGE_SIZE;
 
             // Obtener registros paginados
-            const historial = await historalPV.find({
+            const paginatedHistorial = await historalPV.find({
                 fecha: {
                     $gte: fechaInicioParsed,
                     $lte: fechaFinalParsed
@@ -213,38 +256,50 @@ export const exportHistorialPVToPDFPaginated = async (req, res) => {
             .limit(PAGE_SIZE)
             .skip(skip);
 
-            if (!historial.length) {
+            if (!paginatedHistorial.length) {
                 hasMoreRecords = false;
                 break;
             }
 
-            // Añadir los registros al PDF
-            historial.forEach((item) => {
-                doc.fontSize(12).text(`\nHistorial #${recordIndex}`);
-                doc.text(`ID: ${item._id}`);
-                doc.text(`Persona: ${item.persona.nombre}`);
-                doc.text(`Vehículo: ${item.vehiculo.placa}`);
-                doc.text(`Usuario: ${item.usuario.nombre}`);
-                doc.text(`Estado: ${item.estado}`);
-                doc.text(`Fecha: ${moment(item.fecha).format('YYYY-MM-DD')}`);
-                doc.text(`Hora: ${item.hora}`);
-                recordIndex++;
+            paginatedHistorial.forEach((item) => {
+                const columnWidths = [90, 100, 100, 90, 120]; // Anchos ajustados de las columnas
+                const nombre = item.persona?.nombre || item.nombre;
+                const dpi = item.persona?.DPI || item.DPI;
+                const vehiculo = item.vehiculo?.placa || item.placa;
+                const guardian = item.usuario?.nombre || 'N/A';
+                const fechaHora = `${moment(item.fecha).format('YYYY-MM-DD')} ${item.hora || 'N/A'}`;
+
+                // Ajuste de texto para cortar si es muy largo
+                const nombreHeight = doc.heightOfString(nombre, { width: columnWidths[0] });
+                const guardianHeight = doc.heightOfString(guardian, { width: columnWidths[3] });
+                const rowHeight = Math.max(nombreHeight, guardianHeight, itemMargin);
+
+                doc.text(nombre, 40, positionY, { width: columnWidths[0], ellipsis: true });
+                doc.text(dpi, 140, positionY, { width: columnWidths[1], ellipsis: true });
+                doc.text(vehiculo, 240, positionY, { width: columnWidths[2], ellipsis: true });
+                doc.text(guardian, 340, positionY, { width: columnWidths[3], ellipsis: true });
+                doc.text(fechaHora, 430, positionY, { width: columnWidths[4], ellipsis: true });
+
+                positionY += rowHeight;
+                rowsCount++;
+
+                if (rowsCount >= maxRowsPerPage) {
+                    setupNewPage();
+                    positionY = tableTop + itemMargin;
+                    rowsCount = 0;
+                }
             });
 
-            // Verificar si estamos al final de la página
-            if (recordIndex % PAGE_SIZE === 0) {
-                doc.addPage(); // Añadir una nueva página
-                doc.fontSize(20).text('Historial de Vehículos', { align: 'center' }).moveDown(1);
-            }
-
-            // Pasar a la siguiente página de datos
             currentPage++;
         }
 
-        // Terminar el documento PDF
+        // Finalizar el documento
         doc.end();
+
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: 'Error al exportar a PDF', error: error.message });
+        if (!res.headersSent) {
+            return res.status(500).json({ message: 'Error al exportar a PDF', error: error.message });
+        }
     }
 };
