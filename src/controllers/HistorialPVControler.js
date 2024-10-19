@@ -149,13 +149,13 @@ export const exportHistorialPVToExcelPaginated = async (req, res) => {
             // Agregar cada registro al Excel
             historial.forEach(item => {
                 worksheet.addRow({
-                    persona: item.persona ? item.persona.nombre : 'Desconocido', 
-                    DPI: item.persona ? item.persona.DPI : 'Desconocido',  // Validar si hay persona
-                    vehiculo: item.vehiculo ? item.vehiculo.modelo : 'Desconocido', // Validar si hay vehículo
+                    persona: item.persona ? item.persona.nombre : item.nombre, 
+                    DPI: item.persona ? item.persona.DPI :  item.DPI,  // Validar si hay persona
+                    vehiculo: item.vehiculo ? item.vehiculo.placa : item.placa, // Validar si hay vehículo
                     usuario: item.usuario ? item.usuario.nombre : 'Desconocido',  // Validar si hay usuario
                     estado: item.estado === 'S' ? 'Salió' : item.estado === 'E' ? 'Entró' : 'Desconocido', // Validar estado
                     fecha: item.fecha ? moment(item.fecha).format('YYYY-MM-DD') : '', // Validar fecha
-                    hora: item.hora || '' // Validar hora
+                    hora: item.hora || '' 
                 });
             });
             currentPage++;
