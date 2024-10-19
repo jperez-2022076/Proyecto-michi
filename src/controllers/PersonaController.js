@@ -89,35 +89,59 @@ export const searchPersonaById = async (req, res) => {
     }
 };
 
-
 export const exportPersonasToExcel = async (req, res) => {
     try {
-        const personas = await Persona.find();
+        const personas = await Persona.find({  estado: true });
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Personas');
+        
+       
+        
+        // Configurar los encabezados en la segunda fila
         worksheet.columns = [
             { header: 'Nombre', key: 'nombre', width: 30 },
-            { header: 'Teléfono', key: 'telefono', width: 15 },
+            { header: 'Teléfono', key: 'telefono', width: 20 },
             { header: 'DPI', key: 'DPI', width: 20 },
-            { header: 'Foto', key: 'fotoP', width: 30 },
-            { header: 'Estado', key: 'estado', width: 10 },
         ];
 
+        // Establecer estilo en los encabezados (negrita y centrado)
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+        // Agregar las filas de datos a partir de la tercera fila
         personas.forEach(persona => {
-            worksheet.addRow(persona);
+            worksheet.addRow({
+                nombre: persona.nombre,
+                telefono: persona.telefono ?persona.telefono : '',  // Asegurar que el teléfono sea tratado como texto
+                DPI: persona.DPI ? persona.DPI.toString() : 'sin dpi'  // Asegurar que el DPI sea tratado como texto
+            });
         });
 
+        // Ajustar automáticamente el ancho de las columnas
+        worksheet.columns.forEach((column) => {
+            let maxLength = column.header.length; // Iniciar con la longitud del encabezado
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const cellLength = cell.value ? cell.value.toString().length : 10;
+                if (cellLength > maxLength) {
+                    maxLength = cellLength;
+                }
+            });
+            column.width = maxLength < 10 ? 10 : maxLength; // Asignar un mínimo de 10 si el contenido es pequeño
+        });
+
+        // Configurar las cabeceras para la descarga
         res.setHeader('Content-Disposition', 'attachment; filename=personas.xlsx');
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
+        // Escribir el archivo y finalizar la respuesta
         await workbook.xlsx.write(res);
         res.end();
     } catch (err) {
         res.status(500).json({ message: 'Error al exportar a Excel', error: err.message });
     }
 };
-
 
 
 export const exportPersonasToPDF = async (req, res) => {

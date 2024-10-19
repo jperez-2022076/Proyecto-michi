@@ -5,6 +5,7 @@ import Vehiculo from "../model/Vehiculo.js";
 import exceljs from 'exceljs';
 import fs from 'fs';
 import path from 'path';
+import moment from 'moment';
 
 
 export const addVehiculo = async (req, res) => {
@@ -112,41 +113,63 @@ export const searchVehiculoById = async (req, res) => {
 
 
 
-// Exportar a Excel
 export const exportToExcel = async (req, res) => {
-    try {
-      const vehiculos = await Vehiculo.find();
-      
+  try {
+      const vehiculos = await Vehiculo.find({ estado: true });
+
       const workbook = new exceljs.Workbook();
       const worksheet = workbook.addWorksheet('Vehículos');
       
-      // Definir encabezados de la tabla
+      // Configurar los encabezados
       worksheet.columns = [
-        { header: 'ID', key: '_id', width: 25 },
-        { header: 'Placa', key: 'placa', width: 15 },
-        { header: 'Foto', key: 'fotoV', width: 20 },
-        { header: 'Pagado', key: 'pagado', width: 10 },
-        { header: 'Estado', key: 'estado', width: 10 },
+  
+          { header: 'Placa', key: 'placa', width: 15 },
+          { header: 'Pagado', key: 'pagado', width: 10 },
+          { header: 'Fecha', key: 'fecha', width: 10 },
+   
       ];
-      
-      // Añadir filas con los datos
+
+      // Establecer estilo en los encabezados (negrita y centrado)
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Agregar las filas de datos a partir de la segunda fila
       vehiculos.forEach(vehiculo => {
-        worksheet.addRow(vehiculo);
+          worksheet.addRow({
+              placa: vehiculo.placa,
+              pagado: vehiculo.pagado ? 'Sí' : 'No', 
+              fecha: vehiculo.fecha ? moment(vehiculo.fecha).format('YYYY-MM-DD') : '' // Verificar si hay fecha, si no dejar en blanco
+          });
       });
-  
-      // Enviar archivo Excel
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+      // Ajustar automáticamente el ancho de las columnas
+      worksheet.columns.forEach((column) => {
+          let maxLength = column.header.length; // Iniciar con la longitud del encabezado
+          column.eachCell({ includeEmpty: true }, (cell) => {
+              const cellLength = cell.value ? cell.value.toString().length : 10;
+              if (cellLength > maxLength) {
+                  maxLength = cellLength;
+              }
+          });
+          column.width = maxLength < 10 ? 10 : maxLength; // Asignar un mínimo de 10 si el contenido es pequeño
+      });
+
+      // Configurar las cabeceras para la descarga
       res.setHeader('Content-Disposition', 'attachment; filename=vehiculos.xlsx');
-  
-      return workbook.xlsx.write(res).then(() => {
-        res.status(200).end();
-      });
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: 'Error al exportar a Excel' });
-    }
-  };
-  
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+
+      // Escribir el archivo y finalizar la respuesta
+      await workbook.xlsx.write(res);
+      res.end();
+  } catch (err) {
+      res.status(500).json({ message: 'Error al exportar a Excel', error: err.message });
+  }
+};
+
+
+
+
   export const exportToPDF = async (req, res) => {
     try {
       const vehiculos = await Vehiculo.find({ estado: true });

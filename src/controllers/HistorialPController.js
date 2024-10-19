@@ -88,19 +88,23 @@ export const getHistorialPByFecha = async (req, res) => {
 };
 
 const PAGE_SIZE = 300;
+
+
+
 // Función para exportar historial a Excel con paginación
 export const exportHistorialToExcelPaginated = async (req, res) => {
     try {
         const { fechaInicio, fechaFinal } = req.params;
-
-        const fechaInicioParsed = fechaInicio ? new Date(fechaInicio) : moment().startOf('day').toDate();
-        const fechaFinalParsed = fechaFinal ? new Date(fechaFinal) : moment().endOf('day').toDate();
+        console.log(fechaInicio,fechaFinal)
+        // Parsear las fechas
+        const fechaInicioParsed = fechaInicio ? moment(fechaInicio, 'YYYY-MM-DD').startOf('day').toDate() : moment().startOf('day').toDate();
+        const fechaFinalParsed = fechaFinal ? moment(fechaFinal, 'YYYY-MM-DD').endOf('day').toDate() : moment().endOf('day').toDate();
 
         // Crear un archivo Excel vacío
         const workbook = new exceljs.Workbook();
         const worksheet = workbook.addWorksheet('Historial');
 
-        // Definir columnas
+        // Definir columnas y encabezados
         worksheet.columns = [
             { header: 'ID', key: '_id', width: 25 },
             { header: 'Persona', key: 'persona', width: 25 },
@@ -110,7 +114,12 @@ export const exportHistorialToExcelPaginated = async (req, res) => {
             { header: 'Hora', key: 'hora', width: 10 }
         ];
 
-        // Variable para controlar el paginado
+        // Establecer estilo en los encabezados (negrita y centrado)
+        const headerRow = worksheet.getRow(1);
+        headerRow.font = { bold: true };
+        headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+
+        // Variable para controlar la paginación
         let currentPage = 0;
         let hasMoreRecords = true;
 
@@ -129,6 +138,7 @@ export const exportHistorialToExcelPaginated = async (req, res) => {
             .limit(PAGE_SIZE)
             .skip(skip);
 
+            // Si no hay más registros, salir del bucle
             if (!historial.length) {
                 hasMoreRecords = false;
                 break;
@@ -138,11 +148,11 @@ export const exportHistorialToExcelPaginated = async (req, res) => {
             historial.forEach(item => {
                 worksheet.addRow({
                     _id: item._id,
-                    persona: item.persona.nombre,
-                    usuario: item.usuario.nombre,
-                    estado: item.estado,
-                    fecha: moment(item.fecha).format('YYYY-MM-DD'),
-                    hora: item.hora
+                    persona: item.persona ? item.persona.nombre : 'Desconocido', // Validar si hay nombre de persona
+                    usuario: item.usuario ? item.usuario.nombre : 'Desconocido', // Validar si hay nombre de usuario
+                    estado: item.estado || 'Desconocido', // Validar si hay estado
+                    fecha: item.fecha ? moment(item.fecha).format('YYYY-MM-DD') : '', // Validar si hay fecha
+                    hora: item.hora || '' // Validar si hay hora
                 });
             });
 
@@ -150,10 +160,23 @@ export const exportHistorialToExcelPaginated = async (req, res) => {
             currentPage++;
         }
 
-        // Enviar archivo Excel
+        // Ajustar automáticamente el ancho de las columnas
+        worksheet.columns.forEach((column) => {
+            let maxLength = column.header.length; // Iniciar con la longitud del encabezado
+            column.eachCell({ includeEmpty: true }, (cell) => {
+                const cellLength = cell.value ? cell.value.toString().length : 10;
+                if (cellLength > maxLength) {
+                    maxLength = cellLength;
+                }
+            });
+            column.width = maxLength < 10 ? 10 : maxLength; // Asignar un mínimo de 10 si el contenido es pequeño
+        });
+
+        // Configurar las cabeceras para la descarga del archivo
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', 'attachment; filename=historial_paginated.xlsx');
 
+        // Escribir el archivo y finalizar la respuesta
         return workbook.xlsx.write(res).then(() => {
             res.status(200).end();
         });
