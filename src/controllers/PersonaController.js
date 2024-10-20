@@ -190,7 +190,7 @@ export const exportPersonasToPDF = async (req, res) => {
         // Espaciado después del encabezado de la tabla
         const tableTop = 150;
         const itemMargin = 20;
-        const maxRowsPerPage = 25;
+        const maxRowsPerPage = 20;
         let rowsCount = 0;
         let positionY = tableTop + itemMargin;
 
