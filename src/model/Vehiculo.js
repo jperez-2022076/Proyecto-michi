@@ -7,6 +7,9 @@ const vehiculoSchema = new Schema(
       type: String,
       required: true,
     },
+    codigo: {
+      type: String,
+    },
     fotoV: {
       type: String,
     },

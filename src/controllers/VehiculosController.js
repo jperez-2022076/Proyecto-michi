@@ -124,6 +124,7 @@ export const exportToExcel = async (req, res) => {
       worksheet.columns = [
   
           { header: 'Placa', key: 'placa', width: 15 },
+          { header: 'Código', key: 'codigo', width: 15 },
           { header: 'Pagado', key: 'pagado', width: 10 },
           { header: 'Fecha', key: 'fecha', width: 10 },
    
@@ -138,6 +139,7 @@ export const exportToExcel = async (req, res) => {
       vehiculos.forEach(vehiculo => {
           worksheet.addRow({
               placa: vehiculo.placa,
+              codigo: vehiculo.codigo ? vehiculo.codigo : 'Sin código',
               pagado: vehiculo.pagado ? 'Sí' : 'No', 
               fecha: vehiculo.fecha ? moment(vehiculo.fecha).format('YYYY-MM-DD') : '' // Verificar si hay fecha, si no dejar en blanco
           });
@@ -169,81 +171,85 @@ export const exportToExcel = async (req, res) => {
 
 
 
+export const exportToPDF = async (req, res) => {
+  try {
+    const vehiculos = await Vehiculo.find({ estado: true });
+    const doc = new PDFDocument({ size: 'A4' });
 
-  export const exportToPDF = async (req, res) => {
-    try {
-      const vehiculos = await Vehiculo.find({ estado: true });
-      const doc = new PDFDocument({ size: 'A4' });
-  
-      // Enviar PDF como descarga
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=vehiculos.pdf');
-  
-      // Iniciar el PDF
-      doc.pipe(res);
-  
-      // Función para dibujar la imagen de fondo
-      const drawBackgroundImage = () => {
-        const imagePath = path.resolve('src/img/fondoPDF.png'); // Ruta absoluta
-        doc.image(imagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
-      };
-  
-      // Función para dibujar los encabezados de la tabla
-      const drawTableHeaders = () => {
-        doc.font('Helvetica-Bold').fontSize(16).text('Placa', 50, 150); // Tamaño 16 para encabezados
-        doc.text('Pagado', 200, 150);
-        doc.text('Fecha de pago', 400, 150);
-      };
-  
-      // Función para configurar una nueva página con el fondo y encabezados
-      const setupNewPage = () => {
-        doc.addPage(); // Añadir una nueva página
-        drawBackgroundImage(); // Dibujar la imagen de fondo
-        drawTableHeaders(); // Dibujar los encabezados de la tabla
-        doc.font('Helvetica').fontSize(15); // Restablecer la fuente normal para los datos
-      };
-  
-      // Configurar la primera página
-      drawBackgroundImage(); // Dibujar la imagen de fondo en la primera página
-      doc.fontSize(20).text('Listado de Vehículos', { align: 'center', underline: true });
-      doc.moveDown(2);
+    // Enviar PDF como descarga
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename=vehiculos.pdf');
+
+    // Iniciar el PDF
+    doc.pipe(res);
+
+    // Función para dibujar la imagen de fondo
+    const drawBackgroundImage = () => {
+      const imagePath = path.resolve('src/img/fondoPDF.png'); // Ruta absoluta
+      doc.image(imagePath, 0, 0, { width: doc.page.width, height: doc.page.height });
+    };
+
+    // Función para dibujar los encabezados de la tabla
+    const drawTableHeaders = () => {
+      doc.font('Helvetica-Bold').fontSize(16).text('Placa', 50, 150);
+      doc.text('Código', 150, 150);
+      doc.text('Pagado', 300, 150);
+      doc.text('Fecha de pago', 400, 150);
+    };
+
+    // Función para configurar una nueva página con el fondo y encabezados
+    const setupNewPage = () => {
+      doc.addPage();
+      drawBackgroundImage();
       drawTableHeaders();
-  
-      // Asegurarse de cambiar la fuente a normal después de los encabezados en la primera página
       doc.font('Helvetica').fontSize(15);
-  
-      // Espaciado después del encabezado de la tabla
-      const tableTop = 150;
-      const itemMargin = 20;
-      const maxRowsPerPage = 25;  // Máximo de registros por página
-      let rowsCount = 0;  // Contador de filas para manejar el salto de página
-      let positionY = tableTop + itemMargin;
-  
-      // Crear fila para cada vehículo
-      vehiculos.forEach((vehiculo, index) => {
-        const formattedDate = vehiculo.fecha ? vehiculo.fecha.toLocaleDateString() : 'N/A';
-  
-        // Dibujar datos de la tabla
-        doc.text(vehiculo.placa, 50, positionY);
-        doc.text(vehiculo.pagado ? 'Sí' : 'No', 200, positionY);
-        doc.text(formattedDate, 400, positionY);
-  
-        positionY += itemMargin;
-        rowsCount++;
-  
-        // Si alcanzamos el máximo de filas, agregar una nueva página
-        if (rowsCount >= maxRowsPerPage) {
-          setupNewPage(); // Configurar la nueva página
-          positionY = tableTop + itemMargin;  // Reiniciar la posición en la nueva página
-          rowsCount = 0;  // Reiniciar el contador de filas
-        }
-      });
-  
-      // Finalizar el documento
-      doc.end();
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: 'Error al exportar a PDF' });
-    }
-  };
-  
+    };
+
+    // Configurar la primera página
+    drawBackgroundImage();
+    doc.fontSize(20).text('Listado de Vehículos', { align: 'center', underline: true });
+    doc.moveDown(2);
+    drawTableHeaders();
+
+    // Asegurarse de cambiar la fuente a normal después de los encabezados
+    doc.font('Helvetica').fontSize(15);
+
+    // Espaciado después del encabezado de la tabla
+    const tableTop = 150;
+    const itemMargin = 20;
+    const maxRowsPerPage = 25;
+    let rowsCount = 0;
+    let positionY = tableTop + itemMargin;
+
+    // Crear fila para cada vehículo
+    vehiculos.forEach((vehiculo) => {
+      const formattedDate = vehiculo.fecha ? vehiculo.fecha.toLocaleDateString() : 'N/A';
+
+      // Limitar el ancho del texto para el código y hacer que se corte si es muy largo
+      const codigoHeight = doc.heightOfString(vehiculo.codigo || 'Sin código', { width: 120 });
+      const rowHeight = Math.max(codigoHeight, itemMargin); // Altura de la fila basada en el contenido
+
+      // Dibujar los datos de la tabla con ajuste automático para el código
+      doc.text(vehiculo.placa, 50, positionY);
+      doc.text(vehiculo.codigo || 'Sin código', 150, positionY, { width: 120 }); // Limitar el ancho a 120 para que se corte
+      doc.text(vehiculo.pagado ? 'Sí' : 'No', 300, positionY);
+      doc.text(formattedDate, 400, positionY);
+
+      positionY += rowHeight; // Ajustar la posición Y según la altura de la fila
+      rowsCount++;
+
+      // Si alcanzamos el máximo de filas, agregar una nueva página
+      if (rowsCount >= maxRowsPerPage) {
+        setupNewPage();
+        positionY = tableTop + itemMargin;
+        rowsCount = 0;
+      }
+    });
+
+    // Finalizar el documento
+    doc.end();
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Error al exportar a PDF' });
+  }
+};

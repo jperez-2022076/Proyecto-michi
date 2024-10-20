@@ -111,6 +111,7 @@ export const exportHistorialPVToExcelPaginated = async (req, res) => {
             { header: 'Persona', key: 'persona', width: 25 },
             { header: 'DPI', key: 'DPI', width: 25 },
             { header: 'Placa', key: 'vehiculo', width: 25 },
+            { header: 'Código', key: 'codigo', width: 25 },
             { header: 'Guardian', key: 'usuario', width: 25 },
             { header: 'Estado', key: 'estado', width: 10 },
             { header: 'Fecha', key: 'fecha', width: 20 },
@@ -151,7 +152,8 @@ export const exportHistorialPVToExcelPaginated = async (req, res) => {
                 worksheet.addRow({
                     persona: item.persona ? item.persona.nombre : "Invitado: "+item.nombre, 
                     DPI: item.persona ? item.persona.DPI :  item.DPI,  // Validar si hay persona
-                    vehiculo: item.vehiculo ? item.vehiculo.placa : item.placa, // Validar si hay vehículo
+                    vehiculo: item.vehiculo ? item.vehiculo.placa : item.placa, 
+                    vehiculo: item.vehiculo.codigo ? item.vehiculo.codigo : "Sin Código",// Validar si hay vehículo
                     usuario: item.usuario ? item.usuario.nombre : 'Desconocido',  // Validar si hay usuario
                     estado: item.estado === 'S' ? 'Salió' : item.estado === 'E' ? 'Entró' : 'Desconocido', // Validar estado
                     fecha: item.fecha ? moment(item.fecha).format('YYYY-MM-DD') : '', // Validar fecha
@@ -220,13 +222,14 @@ export const exportHistorialPVToPDFPaginated = async (req, res) => {
 
         // Función para dibujar los encabezados de la tabla
         const drawTableHeaders = () => {
-            const columnWidths = [90, 90, 100, 80, 120]; // Anchos ajustados de las columnas
+            const columnWidths = [90, 90, 100,100, 80, 120]; // Anchos ajustados de las columnas
             doc.font('Helvetica-Bold').fontSize(14);
-            doc.text('Nombre', 40, 150, { width: columnWidths[0], ellipsis: true });
-            doc.text('DPI', 140, 150, { width: columnWidths[1], ellipsis: true });
-            doc.text('Vehículo', 240, 150, { width: columnWidths[2], ellipsis: true });
-            doc.text('Guardian', 340, 150, { width: columnWidths[3], ellipsis: true });
-            doc.text('Fecha y Hora', 430, 150, { width: columnWidths[4], ellipsis: true });
+            doc.text('Nombre', 20, 150, { width: columnWidths[0], ellipsis: true });
+            doc.text('DPI', 110, 150, { width: columnWidths[1], ellipsis: true });
+            doc.text('Placa', 200, 150, { width: columnWidths[2], ellipsis: true });
+            doc.text('Código', 275, 150, { width: columnWidths[3], ellipsis: true });
+            doc.text('Guardian', 360, 150, { width: columnWidths[4], ellipsis: true });
+            doc.text('Fecha y Hora', 440, 150, { width: columnWidths[5], ellipsis: true });
         };
 
         // Función para configurar una nueva página con el fondo y encabezados
@@ -249,7 +252,7 @@ export const exportHistorialPVToPDFPaginated = async (req, res) => {
         // Espaciado después del encabezado de la tabla
         const tableTop = 150;
         const itemMargin = 20; // Espacio entre filas
-        const maxRowsPerPage = 20; // Registros por página
+        const maxRowsPerPage = 14; // Registros por página
         let rowsCount = 0; // Contador de filas para manejar el salto de página
         let positionY = tableTop + itemMargin;
 
@@ -278,23 +281,26 @@ export const exportHistorialPVToPDFPaginated = async (req, res) => {
             }
 
             paginatedHistorial.forEach((item) => {
-                const columnWidths = [90, 100, 100, 90, 120]; // Anchos ajustados de las columnas
+                const columnWidths = [90, 100,100, 85, 90, 120]; // Anchos ajustados de las columnas
                 const nombre = item.persona?.nombre ||"Invitado: "+ item.nombre;
                 const dpi = item.persona?.DPI || item.DPI;
                 const vehiculo = item.vehiculo?.placa || item.placa;
+                const codigo = item.vehiculo?.codigo || "Sin código";
                 const guardian = item.usuario?.nombre || 'N/A';
                 const fechaHora = `${moment(item.fecha).format('YYYY-MM-DD')} ${item.hora || 'N/A'}`;
 
                 // Ajuste de texto para cortar si es muy largo
                 const nombreHeight = doc.heightOfString(nombre, { width: columnWidths[0] });
-                const guardianHeight = doc.heightOfString(guardian, { width: columnWidths[3] });
-                const rowHeight = Math.max(nombreHeight, guardianHeight, itemMargin);
+                const guardianHeight = doc.heightOfString(guardian, { width: columnWidths[4] });
+                const codigonHeight = doc.heightOfString(codigo, { width: columnWidths[3] });
+                const rowHeight = Math.max(nombreHeight, guardianHeight,codigonHeight, itemMargin);
 
-                doc.text(nombre, 40, positionY, { width: columnWidths[0], ellipsis: true });
-                doc.text(dpi, 140, positionY, { width: columnWidths[1], ellipsis: true });
-                doc.text(vehiculo, 240, positionY, { width: columnWidths[2], ellipsis: true });
-                doc.text(guardian, 340, positionY, { width: columnWidths[3], ellipsis: true });
-                doc.text(fechaHora, 430, positionY, { width: columnWidths[4], ellipsis: true });
+                doc.text(nombre, 20, positionY, { width: columnWidths[0], ellipsis: true });
+                doc.text(dpi, 110, positionY, { width: columnWidths[1], ellipsis: true });
+                doc.text(vehiculo, 200, positionY, { width: columnWidths[2], ellipsis: true });
+                doc.text(codigo, 275, positionY, { width: columnWidths[3], ellipsis: true });
+                doc.text(guardian, 360, positionY, { width: columnWidths[4], ellipsis: true });
+                doc.text(fechaHora, 440, positionY, { width: columnWidths[5], ellipsis: true });
 
                 positionY += rowHeight;
                 rowsCount++;
