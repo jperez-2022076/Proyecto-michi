@@ -166,7 +166,7 @@ export const exportPersonasToPDF = async (req, res) => {
         // Función para dibujar los encabezados de la tabla
         const drawTableHeaders = () => {
             doc.font('Helvetica-Bold').fontSize(16).text('Nombre', 50, 150);
-            doc.text('Teléfono', 200, 150);
+            doc.text('Teléfono', 250, 150);
             doc.text('DPI', 400, 150);
         };
 
@@ -196,12 +196,12 @@ export const exportPersonasToPDF = async (req, res) => {
 
         // Crear fila para cada persona
         personas.forEach((persona) => {
-            const nombreHeight = doc.heightOfString(persona.nombre, { width: 120 });
+            const nombreHeight = doc.heightOfString(persona.nombre, { width: 170 });
             const rowHeight = Math.max(nombreHeight, itemMargin);
 
             // Dibujar los datos de la tabla
-            doc.text(persona.nombre, 50, positionY, { width: 120 });
-            doc.text(persona.telefono || 'N/A', 200, positionY);
+            doc.text(persona.nombre, 50, positionY, { width: 170 });
+            doc.text(persona.telefono || 'N/A', 250, positionY);
             doc.text(persona.DPI || 'N/A', 400, positionY);
 
             positionY += rowHeight;

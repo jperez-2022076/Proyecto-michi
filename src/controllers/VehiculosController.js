@@ -217,7 +217,7 @@ export const exportToPDF = async (req, res) => {
     // Espaciado después del encabezado de la tabla
     const tableTop = 150;
     const itemMargin = 20;
-    const maxRowsPerPage = 17;
+    const maxRowsPerPage = 25;
     let rowsCount = 0;
     let positionY = tableTop + itemMargin;
 
@@ -226,12 +226,12 @@ export const exportToPDF = async (req, res) => {
       const formattedDate = vehiculo.fecha ? vehiculo.fecha.toLocaleDateString() : 'N/A';
 
       // Limitar el ancho del texto para el código y hacer que se corte si es muy largo
-      const codigoHeight = doc.heightOfString(vehiculo.codigo || 'Sin código', { width: 120 });
+      const codigoHeight = doc.heightOfString(vehiculo.codigo || 'Sin código', { width: 140 });
       const rowHeight = Math.max(codigoHeight, itemMargin); // Altura de la fila basada en el contenido
 
       // Dibujar los datos de la tabla con ajuste automático para el código
       doc.text(vehiculo.placa, 50, positionY);
-      doc.text(vehiculo.codigo || 'Sin código', 150, positionY, { width: 120 }); // Limitar el ancho a 120 para que se corte
+      doc.text(vehiculo.codigo || 'Sin código', 150, positionY, { width: 140 }); // Limitar el ancho a 120 para que se corte
       doc.text(vehiculo.pagado ? 'Sí' : 'No', 300, positionY);
       doc.text(formattedDate, 400, positionY);
 
