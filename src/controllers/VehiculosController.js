@@ -6,7 +6,8 @@ import exceljs from 'exceljs';
 import fs from 'fs';
 import path from 'path';
 import moment from 'moment';
-
+import { promisify } from 'util';
+import QRCode from 'qrcode';
 
 export const addVehiculo = async (req, res) => {
     try {
@@ -251,5 +252,82 @@ export const exportToPDF = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Error al exportar a PDF' });
+  }
+};
+
+
+export const createPDFWithVehiculos = async (req, res) => {
+  try {
+      const vehiculos = await Vehiculo.find({ estado: true }); // Buscar todos los vehículos activos
+
+      if (!vehiculos || vehiculos.length === 0) {
+          return res.status(404).json({ message: 'No se encontraron vehículos activos' });
+      }
+
+      // Crear un nuevo documento PDF
+      const doc = new PDFDocument({ size: 'LETTER', margin: 10 });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'attachment; filename=vehiculos_plantillas.pdf');
+      doc.pipe(res); // Enviar el PDF al cliente
+
+      const plantillaPath = path.resolve('src/img/plantilla.png'); // Ruta de la imagen de la plantilla
+      const qrCodeToDataURL = promisify(QRCode.toDataURL);
+
+      // Configuración para las plantillas en el PDF
+      const numRows = 3; // Número de filas por página
+      const numCols = 3; // Número de columnas por página (3 para ajustarlo)
+      const plantillaWidth = 150; // Ancho de cada plantilla ajustado a 5.3 cm (150 puntos)
+      const plantillaHeight = 240; // Altura de cada plantilla (8.5 cm en puntos PDF)
+      const marginX = 15; // Margen horizontal reducido entre plantillas
+      const marginY = 10; // Margen vertical entre plantillas
+      const startX = 20; // Posición inicial en X (ajustado)
+      const startY = 30; // Posición inicial en Y
+      const borderThickness = 3; // Grosor del borde negro
+
+      let currentX = startX;
+      let currentY = startY;
+      let count = 0;
+
+      for (const vehiculo of vehiculos) {
+          // Si se llenan las plantillas en la página, agregar una nueva página
+          if (count > 0 && count % (numRows * numCols) === 0) {
+              doc.addPage();
+              currentX = startX;
+              currentY = startY;
+          }
+
+          // Dibujar el rectángulo negro pegado a la imagen de la plantilla
+          doc.lineWidth(borderThickness)
+              .rect(currentX, currentY, plantillaWidth, plantillaHeight)
+              .strokeColor('black')
+              .stroke();
+
+          // Colocar la imagen de fondo para la plantilla (sin dejar margen entre la imagen y el borde)
+          doc.image(plantillaPath, currentX, currentY, { width: plantillaWidth, height: plantillaHeight });
+
+          // Colocar la placa del vehículo en la parte superior (sobre la imagen de fondo)
+          doc.fontSize(12).fillColor('black').text(vehiculo.placa, currentX + 10, currentY + 40, { width: plantillaWidth - 25, align: 'center' });
+
+          // Generar el código QR con información del ID del vehículo
+          const qrCodeDataURL = await qrCodeToDataURL(vehiculo._id.toString()); // Usando el ID del vehículo como dato en el QR
+
+          // Convertir la URL en un buffer y luego agregarla al PDF en la parte inferior de la plantilla
+          doc.image(qrCodeDataURL, currentX + (plantillaWidth / 2) - 30, currentY + plantillaHeight - 80, { width: 60, height: 60 });
+
+          // Mover la posición de la siguiente plantilla en la página
+          count++;
+          if (count % numCols === 0) {
+              currentX = startX;
+              currentY += plantillaHeight + marginY; // Pasar a la siguiente fila
+          } else {
+              currentX += plantillaWidth + marginX; // Pasar a la siguiente columna
+          }
+      }
+
+      // Finalizar el documento PDF
+      doc.end();
+  } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: 'Error al crear el PDF', error: err.message });
   }
 };

@@ -8,7 +8,8 @@ import {
   exportToExcel,
   exportToPDF,
   searchVehiculosByPlaca,
-  searchVehiculoById
+  searchVehiculoById,
+  createPDFWithVehiculos
 } from '../controllers/VehiculosController.js';
 import { isAdmin, validateJwt } from '../middlewares/validate-jwt.js';
 
@@ -23,6 +24,7 @@ api.post('/buscar',searchVehiculosByPlaca)
 api.get('/buscarId/:id',searchVehiculoById)
 api.get('/exportar/excel' , exportToExcel); // Exportar datos a Excel
 api.get('/exportar/pdf' , exportToPDF); // Exportar datos a PDF
+api.get('/plantilla',createPDFWithVehiculos)
 
 export default api;
   
