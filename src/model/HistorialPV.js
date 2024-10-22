@@ -32,7 +32,7 @@ const historalPV = new Schema(
     estado: {
       type: String,
       enum: ['E', 'S'],
-      default: 'E'
+      default: 'S'
     },
     fecha: {
       type: Date,
