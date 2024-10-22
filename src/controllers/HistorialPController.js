@@ -14,11 +14,11 @@ export const addHistorialP = async (req, res) => {
         const ultimoHistorial = await HistorialP.findOne({ persona })
             .sort({ fecha: -1, hora: -1 }); // Ordenar por la fecha y hora más recientes
 
-        let nuevoEstado = 'E'; // Por defecto, el primer estado es 'E' (Entrada)
+        let nuevoEstado = 'S'; // Por defecto, el primer estado es 'E' (Entrada)
 
         // Si hay un historial previo, alternar entre 'E' y 'S'
-        if (ultimoHistorial && ultimoHistorial.estado === 'E') {
-            nuevoEstado = 'S'; // Cambia a 'S' si la última acción fue 'E'
+        if (ultimoHistorial && ultimoHistorial.estado === 'S') {
+            nuevoEstado = 'E'; // Cambia a 'S' si la última acción fue 'E'
         }
 
         // Crear un nuevo historial con la fecha, hora y estado actual

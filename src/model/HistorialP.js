@@ -16,7 +16,7 @@ const historialP = Schema(
         estado: {
             type: String,
             enum: ['E', 'S'],
-            default: 'E'
+            default: 'S'
         },
         fecha: {
             type: Date,
