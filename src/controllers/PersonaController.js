@@ -59,19 +59,18 @@ export const searchPersonasByName = async (req, res) => {
         // Crear expresión regular insensible a mayúsculas/minúsculas
         const regex = new RegExp(normalizedNombre, 'i');
 
-        // Obtener todas las personas
-        const personas = await Persona.find({ estado: true });
+        // Filtrar personas por nombre y estado directamente en MongoDB
+        const personas = await Persona.find({
+            estado: true,
+            nombre: { $regex: regex }
+        });
 
-        // Filtrar personas que coincidan con el nombre normalizado
-        const filteredPersonas = personas.filter(persona =>
-            persona.nombre.normalize('NFD').replace(/[\u0300-\u036f]/g, "").match(regex)
-        );
-
-        res.status(200).json(filteredPersonas);
+        res.status(200).json(personas);
     } catch (err) {
         res.status(500).json({ message: 'Error al buscar personas por nombre', error: err.message });
     }
 };
+
 
 export const searchPersonaById = async (req, res) => {
     try {
