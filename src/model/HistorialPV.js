@@ -29,6 +29,10 @@ const historalPV = new Schema(
       type: String,
      
     },
+    cliente: {
+      type: String,
+     
+    },
     estado: {
       type: String,
       enum: ['E', 'S'],
