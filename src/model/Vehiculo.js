@@ -13,6 +13,9 @@ const vehiculoSchema = new Schema(
     fotoV: {
       type: String,
     },
+    tarjetaCirculacion:{
+      type: String,
+  },
     pagado: {
       type: Boolean,
       default: false,
