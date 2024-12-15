@@ -104,7 +104,7 @@ export const exportPersonasToExcel = async (req, res) => {
         worksheet.columns = [
             { header: 'Nombre', key: 'nombre', width: 30 },
             { header: 'Teléfono', key: 'telefono', width: 20 },
-            { header: 'DPI', key: 'DPI', width: 20 },
+            { header: 'DPI', key: 'DPI', width: 30 },
             { header: 'Cliente', key: 'cliente', width: 20 },
         ];
 
@@ -200,7 +200,7 @@ export const exportPersonasToPDF = async (req, res) => {
         let positionY = tableTop + itemMargin;
         personas.forEach((persona) => {
             const nombreHeight = doc.heightOfString(persona.nombre, { width: 170 });
-            const clienteHeight = doc.heightOfString(persona.cliente || 'N/A', { width: 100 });
+            const clienteHeight = doc.heightOfString(persona.cliente || 'N/A', { width: 170 });
             const rowHeight = Math.max(nombreHeight, clienteHeight, itemMargin);
 
             doc.text(persona.nombre, 30, positionY, { width: 170 });
