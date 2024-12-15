@@ -200,13 +200,13 @@ export const exportPersonasToPDF = async (req, res) => {
         let positionY = tableTop + itemMargin;
         personas.forEach((persona) => {
             const nombreHeight = doc.heightOfString(persona.nombre, { width: 170 });
-            const clienteHeight = doc.heightOfString(persona.cliente || 'N/A', { width: 170 });
+            const clienteHeight = doc.heightOfString(persona.cliente || 'N/A', { width: 120 });
             const rowHeight = Math.max(nombreHeight, clienteHeight, itemMargin);
 
             doc.text(persona.nombre, 30, positionY, { width: 170 });
             doc.text(persona.telefono || 'N/A', 200, positionY);
             doc.text(persona.DPI || 'N/A', 320, positionY);
-            doc.text(persona.cliente || 'N/A', 450, positionY, { width: 170 });
+            doc.text(persona.cliente || 'N/A', 450, positionY, { width: 120 });
 
             positionY += rowHeight;
             rowsCount++;
