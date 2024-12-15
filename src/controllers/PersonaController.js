@@ -93,18 +93,19 @@ export const searchPersonaById = async (req, res) => {
 
 export const exportPersonasToExcel = async (req, res) => {
     try {
-        const personas = await Persona.find({  estado: true });
+        const personas = await Persona.find({ estado: true });
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Personas');
-        
-       
-        
+
+
+
         // Configurar los encabezados en la segunda fila
         worksheet.columns = [
             { header: 'Nombre', key: 'nombre', width: 30 },
             { header: 'Teléfono', key: 'telefono', width: 20 },
             { header: 'DPI', key: 'DPI', width: 20 },
+            { header: 'Cliente', key: 'cliente', width: 20 },
         ];
 
         // Establecer estilo en los encabezados (negrita y centrado)
@@ -112,12 +113,13 @@ export const exportPersonasToExcel = async (req, res) => {
         headerRow.font = { bold: true };
         headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
 
-        // Agregar las filas de datos a partir de la tercera fila
+    
         personas.forEach(persona => {
             worksheet.addRow({
                 nombre: persona.nombre,
-                telefono: persona.telefono ?persona.telefono : '',  // Asegurar que el teléfono sea tratado como texto
-                DPI: persona.DPI ? persona.DPI.toString() : 'sin dpi'  // Asegurar que el DPI sea tratado como texto
+                telefono: persona.telefono ? persona.telefono : '',  
+                DPI: persona.DPI ? persona.DPI.toString() : 'sin dpi',
+                cliente: persona.cliente ? persona.cliente : 'N/A'
             });
         });
 
@@ -167,9 +169,10 @@ export const exportPersonasToPDF = async (req, res) => {
 
         // Función para dibujar los encabezados de la tabla
         const drawTableHeaders = () => {
-            doc.font('Helvetica-Bold').fontSize(16).text('Nombre', 50, 150);
-            doc.text('Teléfono', 250, 150);
-            doc.text('DPI', 400, 150);
+            doc.font('Helvetica-Bold').fontSize(16).text('Nombre', 30, 150);
+            doc.text('Teléfono', 200, 150);
+            doc.text('DPI', 320, 150);
+            doc.text('Cliente', 450, 150);
         };
 
         // Función para configurar una nueva página con el fondo y encabezados
@@ -195,21 +198,18 @@ export const exportPersonasToPDF = async (req, res) => {
         const maxRowsPerPage = 20;
         let rowsCount = 0;
         let positionY = tableTop + itemMargin;
-
-        // Crear fila para cada persona
         personas.forEach((persona) => {
             const nombreHeight = doc.heightOfString(persona.nombre, { width: 170 });
-            const rowHeight = Math.max(nombreHeight, itemMargin);
+            const clienteHeight = doc.heightOfString(persona.cliente || 'N/A', { width: 100 });
+            const rowHeight = Math.max(nombreHeight, clienteHeight, itemMargin);
 
-            // Dibujar los datos de la tabla
-            doc.text(persona.nombre, 50, positionY, { width: 170 });
-            doc.text(persona.telefono || 'N/A', 250, positionY);
-            doc.text(persona.DPI || 'N/A', 400, positionY);
+            doc.text(persona.nombre, 30, positionY, { width: 170 });
+            doc.text(persona.telefono || 'N/A', 200, positionY);
+            doc.text(persona.DPI || 'N/A', 320, positionY);
+            doc.text(persona.cliente || 'N/A', 450, positionY, { width: 100 });
 
             positionY += rowHeight;
             rowsCount++;
-
-            // Si alcanzamos el máximo de filas, agregar una nueva página
             if (rowsCount >= maxRowsPerPage) {
                 setupNewPage();
                 positionY = tableTop + itemMargin;

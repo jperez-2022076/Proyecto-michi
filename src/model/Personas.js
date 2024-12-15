@@ -17,6 +17,10 @@ const personasSchema = Schema(
             type:String,
             required: true,
         },
+        cliente:{
+            type:String,
+
+        },
         fotoP:{
             type:String,
         },
