@@ -311,26 +311,16 @@ export const createPDFWithPersonas = async (req, res) => {
 export const exportPersonasToJson = async (req, res) => {
     try {
         const personas = await Persona.find({ estado: true }).lean();
-
+        console.log(personas)
         if (!personas.length) {
             return res.status(404).json({ message: 'No hay personas registradas' });
         }
 
-        // Ruta temporal para almacenar el archivo
-        const filePath = path.join('/tmp', 'personas.json');
-        fs.writeFileSync(filePath, JSON.stringify(personas, null, 2), 'utf8');
-
-        // Enviar el archivo para su descarga
-        res.setHeader('Content-Disposition', 'attachment; filename=personas.json');
         res.setHeader('Content-Type', 'application/json');
-        res.download(filePath, 'personas.json', (err) => {
-            if (err) {
-                console.error('Error al descargar JSON:', err);
-                res.status(500).json({ message: 'Error al generar el archivo JSON' });
-            }
-            fs.unlinkSync(filePath); // Eliminar archivo temporal después de la descarga
-        });
+        res.status(200).json(personas);
+
     } catch (err) {
-        res.status(500).json({ message: 'Error al exportar a JSON', error: err.message });
+        res.status(500).json({ message: 'Error al exportar JSON', error: err.message });
     }
 };
+
