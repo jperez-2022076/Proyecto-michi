@@ -302,4 +302,38 @@ export const createPDFWithPersonas = async (req, res) => {
         console.error(err);
         res.status(500).json({ message: 'Error al crear el PDF', error: err.message });
     }
+
+
+    
+    
+};
+
+
+export const exportPersonasToJson = async (req, res) => {
+    try {
+        const personasStream = Persona.find({ estado: true }).lean().cursor(); // Streaming desde MongoDB
+
+        if (!personasStream) {
+            return res.status(404).json({ message: 'No hay personas registradas' });
+        }
+
+        res.setHeader('Content-Disposition', 'attachment; filename=personas.json.gz');
+        res.setHeader('Content-Type', 'application/gzip');
+
+        const gzip = createGzip(); // Comprimir JSON
+        const jsonStream = createWriteStream(path.join('/tmp', 'personas.json'));
+
+        pipeline(
+            personasStream.pipe(gzip), // Convertir el stream de Mongo a JSON comprimido
+            res, 
+            (err) => {
+                if (err) {
+                    console.error('Error al enviar JSON:', err);
+                    res.status(500).json({ message: 'Error al generar JSON' });
+                }
+            }
+        );
+    } catch (err) {
+        res.status(500).json({ message: 'Error al exportar JSON', error: err.message });
+    }
 };
