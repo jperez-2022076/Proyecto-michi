@@ -308,32 +308,29 @@ export const createPDFWithPersonas = async (req, res) => {
     
 };
 
-
 export const exportPersonasToJson = async (req, res) => {
     try {
-        const personasStream = Persona.find({ estado: true }).lean().cursor(); // Streaming desde MongoDB
+        const personas = await Persona.find({ estado: true }).lean();
 
-        if (!personasStream) {
+        if (!personas.length) {
             return res.status(404).json({ message: 'No hay personas registradas' });
         }
 
-        res.setHeader('Content-Disposition', 'attachment; filename=personas.json.gz');
-        res.setHeader('Content-Type', 'application/gzip');
+        // Ruta temporal para almacenar el archivo
+        const filePath = path.join('/tmp', 'personas.json');
+        fs.writeFileSync(filePath, JSON.stringify(personas, null, 2), 'utf8');
 
-        const gzip = createGzip(); // Comprimir JSON
-        const jsonStream = createWriteStream(path.join('/tmp', 'personas.json'));
-
-        pipeline(
-            personasStream.pipe(gzip), // Convertir el stream de Mongo a JSON comprimido
-            res, 
-            (err) => {
-                if (err) {
-                    console.error('Error al enviar JSON:', err);
-                    res.status(500).json({ message: 'Error al generar JSON' });
-                }
+        // Enviar el archivo para su descarga
+        res.setHeader('Content-Disposition', 'attachment; filename=personas.json');
+        res.setHeader('Content-Type', 'application/json');
+        res.download(filePath, 'personas.json', (err) => {
+            if (err) {
+                console.error('Error al descargar JSON:', err);
+                res.status(500).json({ message: 'Error al generar el archivo JSON' });
             }
-        );
+            fs.unlinkSync(filePath); // Eliminar archivo temporal después de la descarga
+        });
     } catch (err) {
-        res.status(500).json({ message: 'Error al exportar JSON', error: err.message });
+        res.status(500).json({ message: 'Error al exportar a JSON', error: err.message });
     }
 };
