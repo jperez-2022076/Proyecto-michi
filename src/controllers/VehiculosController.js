@@ -8,12 +8,26 @@ import path from 'path';
 import moment from 'moment';
 import { promisify } from 'util';
 import QRCode from 'qrcode';
+import Telefono from '../model/Telefono.js';
+
 
 export const addVehiculo = async (req, res) => {
     try {
       const vehiculoData = req.body;
       const newVehiculo = new Vehiculo(vehiculoData);
       await newVehiculo.save();
+      await Telefono.updateMany(
+        {},
+        {
+          $push: {
+            datos: {
+              tipo: 'V',
+              accion: 'A',
+              vehiculo: newVehiculo._id,
+            }
+          }
+        }
+      );
       return res.status(200).json({ message: 'Vehículo creado con éxito', newVehiculo });
     } catch (error) {
       console.error(error);
@@ -69,7 +83,20 @@ export const searchVehiculoById = async (req, res) => {
       const { id } = req.params;
       const vehiculoData = req.body;
       const updatedVehiculo = await Vehiculo.findByIdAndUpdate(id, vehiculoData, { new: true });
+      await Telefono.updateMany(
+        {},
+        {
+          $push: {
+            datos: {
+              tipo: 'V',
+              accion: 'U',
+              vehiculo: updatedVehiculo._id,
+            }
+          }
+        }
+      );
       if (!updatedVehiculo) return res.status(404).json({ message: 'Vehículo no encontrado' });
+      
       return res.status(200).json({ message: 'Vehículo actualizado con éxito', updatedVehiculo });
     } catch (error) {
       console.error(error);
@@ -80,6 +107,18 @@ export const searchVehiculoById = async (req, res) => {
     try {
       const vehiculo = await Vehiculo.findByIdAndUpdate(req.params.id, { estado: false }, { new: true });
       if (!vehiculo) return res.status(404).json({ message: 'Vehículo no encontrado' });
+      await Telefono.updateMany(
+        {},
+        {
+          $push: {
+            datos: {
+              tipo: 'V',
+              accion: 'D',
+              vehiculo: vehiculo._id,
+            }
+          }
+        }
+      );
       res.status(200).json({ message: 'Vehículo eliminado', vehiculo });
     } catch (err) {
       res.status(500).json({ message: 'Error al eliminar vehículo', error: err.message });

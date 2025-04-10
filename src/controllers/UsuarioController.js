@@ -2,7 +2,7 @@ import Usuario from "../model/Usuario.js";
 import { encrypt, checkPassword } from '../helpers/validator.js';
 import { generateJwt } from '../helpers/jwt.js';
 import { sortedUniq } from "pdf-lib";
-
+import Telefono from '../model/Telefono.js';
 // Crear un usuario nuevo
 export const addUser = async (req, res) => {
   try {
@@ -10,6 +10,18 @@ export const addUser = async (req, res) => {
     data.password = await encrypt(data.password); // Encriptar contraseña
     let user = new Usuario(data);
     await user.save();
+    await Telefono.updateMany(
+      {},
+      {
+        $push: {
+          datos: {
+            tipo: 'U',
+            accion: 'A',
+            usuario: user._id,
+          }
+        }
+      }
+    );
     return res.status(200).send({ message: 'Usuario creado con éxito' });
   } catch (err) {
     console.error(err);
@@ -34,6 +46,18 @@ export const updateUser = async (req, res) => {
     if (!updatedUser) {
       return res.status(404).send({ message: 'Usuario no encontrado' });
     }
+    await Telefono.updateMany(
+      {},
+      {
+        $push: {
+          datos: {
+            tipo: 'U',
+            accion: 'U',
+            usuario: user._id,
+          }
+        }
+      }
+    );
     return res.status(200).send({ message: 'Usuario actualizado', updatedUser });
   } catch (err) {
     console.error(err);
@@ -60,6 +84,18 @@ export const deleteUser = async (req, res) => {
     if (!deletedUser) {
       return res.status(404).send({ message: 'Usuario no encontrado' });
     }
+    await Telefono.updateMany(
+      {},
+      {
+        $push: {
+          datos: {
+            tipo: 'U',
+            accion: 'D',
+            usuario: user._id,
+          }
+        }
+      }
+    );
     return res.status(200).send({ message: 'Usuario eliminado con éxito' });
   } catch (err) {
     console.error(err);

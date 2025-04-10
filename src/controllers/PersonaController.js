@@ -2,16 +2,29 @@
 import Persona from '../model/Personas.js';
 import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
-import stream from 'stream';
 import path from 'path';
-import { createWriteStream } from 'fs';
 import { promisify } from 'util';
 import QRCode from 'qrcode';
+
+import Telefono from '../model/Telefono.js';
+
 
 export const createPersona = async (req, res) => {
     try {
         const persona = new Persona(req.body);
         await persona.save();
+        await Telefono.updateMany(
+            {},
+            {
+              $push: {
+                datos: {
+                  tipo: 'P',
+                  accion: 'A',
+                  persona: persona._id,
+                }
+              }
+            }
+          );
         res.status(201).json({ message: 'Persona creada con éxito', persona });
     } catch (err) {
         res.status(500).json({ message: 'Error al crear persona', error: err.message });
@@ -32,6 +45,18 @@ export const updatePersona = async (req, res) => {
     try {
         const persona = await Persona.findByIdAndUpdate(req.params.id, req.body, { new: true });
         if (!persona) return res.status(404).json({ message: 'Persona no encontrada' });
+        await Telefono.updateMany(
+            {},
+            {
+              $push: {
+                datos: {
+                  tipo: 'P',
+                  accion: 'U',
+                  persona: persona._id,
+                }
+              }
+            }
+          );
         res.status(200).json({ message: 'Persona actualizada', persona });
     } catch (err) {
         res.status(500).json({ message: 'Error al actualizar persona', error: err.message });
@@ -41,6 +66,18 @@ export const deletePersona = async (req, res) => {
     try {
         const persona = await Persona.findByIdAndUpdate(req.params.id, { estado: false }, { new: true });
         if (!persona) return res.status(404).json({ message: 'Persona no encontrada' });
+        await Telefono.updateMany(
+            {},
+            {
+              $push: {
+                datos: {
+                  tipo: 'P',
+                  accion: 'D',
+                  persona: persona._id,
+                }
+              }
+            }
+          );
         res.status(200).json({ message: 'Persona eliminada', persona });
     } catch (err) {
         res.status(500).json({ message: 'Error al eliminar persona', error: err.message });

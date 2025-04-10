@@ -8,7 +8,7 @@ import personarRouter from '../routes/PersonasRouter.js'
 import vehiculoRouter from '../routes/VehiculoRouter.js'
 import HistorialP from '../routes/HistorialPRouter.js'
 import HistorialPV from '../routes/HistorialPVRouter.js'
-
+import TelefonoRouter from '../routes/TelefonoRouter.js'
 
 const app = express();
 config();
@@ -26,7 +26,7 @@ app.use('/persona',personarRouter)
 app.use('/vehiculo',vehiculoRouter)
 app.use('/historialP', HistorialP)
 app.use('/historialPV',HistorialPV)
-
+app.use('/telefono',TelefonoRouter)
 
 export const initServer = () => {
     app.listen(port);
