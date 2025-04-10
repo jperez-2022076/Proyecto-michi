@@ -53,7 +53,7 @@ export const updateUser = async (req, res) => {
           datos: {
             tipo: 'U',
             accion: 'U',
-            usuario: user._id,
+            usuario: updatedUser._id,
           }
         }
       }
@@ -91,7 +91,7 @@ export const deleteUser = async (req, res) => {
           datos: {
             tipo: 'U',
             accion: 'D',
-            usuario: user._id,
+            usuario: deletedUser._id,
           }
         }
       }
